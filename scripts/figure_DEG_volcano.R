@@ -2,10 +2,10 @@
 library(tidyverse)
 library(ComplexHeatmap)
 library(ggsci)
-library("scales")
+library(scales)
 library(circlize)
 library(ggrepel)
-
+library(wordcloud)
 
 
 # sypark's code --------------------------------------------------------------------------------------------------------
@@ -79,8 +79,6 @@ ggplot(volc_dt, aes(x=WT_mean - MT_mean, y=-log10(t.test.pvalue)))+
 WT_high_genes <- volc_dt %>% filter(WT_mean - MT_mean >=1 & t.test.pvalue < 0.05/nrow(volc_dt)) %>% .$gene
 
 # kjyi's code-------------------------------------------------------------------------------------------
-library(wordcloud)
-c(T,T) | c(T,F)
 
 
 

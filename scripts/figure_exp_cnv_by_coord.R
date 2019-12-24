@@ -1,32 +1,24 @@
 library(tidyverse)
 library(stringr)
-library(doMC)
+library(doMC, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
 
 # prep -------------------------------------------------------------------------------------------------------
-
 plogsum <- read_rds("data/expbycoord/plogtpm_w2x10^7_o_0.2_sum.Rds")
 plogavg <- read_rds("data/expbycoord/plogtpm_w2x10^7_o_0.2_average.Rds")
 zlogsum <- read_rds("data/expbycoord/zlogtpm_w2x10^7_o_0.2_sum.Rds")
 zlogavg <- read_rds("data/expbycoord/zlogtpm_w2x10^7_o_0.2_average.Rds")
-# logsum <- read_rds("data/expbycoord/logtpm_w2x10^7_o_0.2_sum.Rds")
-# logavg <- read_rds("data/expbycoord/logtpm_w2x10^7_o_0.2_average.Rds")
-# tpmsum <- read_rds("data/expbycoord/tpm_w2x10^7_o_0.2_sum.Rds")
-# tpmavg <- read_rds("data/expbycoord/tpm_w2x10^7_o_0.2_average.Rds")
-# ngenes <- read_rds("data/expbycoord/logtpm_w2x10^7_o_0.2_ngenes.Rds")
 
-metadata <-read_tsv('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata/Thymoma_summary_191115_1stSheet.txt') %>% 
-  select(id,GTF2I_status2) %>%
+meta_dt <-read_tsv('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata/Thymoma_summary_191115_1stSheet.txt') %>% 
+  dplyr::select(id,GTF2I_status2) %>%
   {.[match(colnames(plogsum[[1]]),.$id),]}
 chrlist=c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X")
-# centromere and telomere
 
+# centromere and telomere
 blacklist = circlize::read.cytoband()$df %>% filter(V5 %in% c("gvar","stalk","acen")) %>% .[,1:3] %>% {names(.) = c("ch","start","end");.} %>% mutate(ch=str_replace(ch,"chr",""))
 blacklist=rbind(blacklist,data.frame(ch="3",start=200000001,end=252000001))
 blacklist=rbind(blacklist,data.frame(ch="X",start=156000001,end=252000001))
 
-
 # sequenza prep
-# load sequenza segment tables
 sqzseg <- foreach(i=colnames(plogsum[[1]]))%do%{
   file <- dir("/home/users/sypark/00_Project/01_thymoma/10_Final_data/18_sequenza/01_segments",
               paste0(i,".*segments.txt$"),full.names = T)
@@ -37,6 +29,7 @@ sqzseg <- foreach(i=colnames(plogsum[[1]]))%do%{
 names(sqzseg) <- colnames(plogsum[[1]]); rm(i,file)
 
 
+
 intervals = lapply(chrlist,
                    function(i){
                      data.frame(
@@ -45,46 +38,41 @@ intervals = lapply(chrlist,
                        end.pos=as.numeric(stringr::str_replace(rownames(plogsum[[i]]),".*_","")))
                    }) %>% do.call(rbind,.)
 
+
+
+
 cnmat <- matrix(0,ncol=length(sqzseg),nrow=nrow(intervals))
 colnames(cnmat) = names(sqzseg)
 rownames(cnmat) = paste0("chr",intervals$chr,":",intervals$start.pos,"-",intervals$end.pos)
 for(sample in names(sqzseg)){
   cnmat[,sample] = foreach(i = 1:nrow(intervals),.combine=c) %do%{
-    sqzseg[[sample]] %>% filter(chromosome == intervals$chr[i] & start.pos <= intervals$end.pos[i] & end.pos >= intervals$start.pos[i]) %>%
+    sqzseg[[sample]] %>% filter(chromosome == intervals$chr[i] &
+                                  start.pos <= intervals$end.pos[i] &
+                                  end.pos >= intervals$start.pos[i]) %>%
       mutate(overlap=pmin(intervals$end.pos[i], end.pos) - pmax(start.pos,intervals$start.pos[i]),
              overlapprop = overlap/sum(overlap), wCNt = overlapprop*CNt) %>% .$wCNt %>% sum
   }
 }
-
-# rownames(cnmat)
-
-# sqzseg[[7]] %>% filter(chromosome=="1") %>% {
-#   plot(0,xlim=c(min(.$start.pos),max(.$end.pos)),ylim=c(0,max(.$CNt)))
-#   segments(x0 = .$start.pos,x1 = .$end.pos,y0 = .$CNt, col=ifelse(.$end.pos-.$start.pos>5000000,"black","red"))
-# }
-
 
 sqzseg[[11]] %>% filter(chromosome=="3") %>% {
   plot(0,xlim=c(min(.$start.pos),max(.$end.pos)),ylim=c(0,max(.$CNt)))
   segments(x0 = .$start.pos,x1 = .$end.pos,y0 = .$CNt, col=ifelse(.$end.pos-.$start.pos>5000000,"black","red"))
 }
 
-
-
 rowProp  = function(x){rowSums(x)/ncol(x)}
 
-colnames(cnmat) == metadata$id
+colnames(cnmat) == meta_dt$id
 ncasecoordampdel=data.frame(
   chr=rownames(cnmat) %>% str_replace(":.*","") %>% str_replace("chr",""),
-  m_amp=rowProp(cnmat[,metadata$GTF2I_status2 == "m"] > 2.5),
-  m_del=rowProp(cnmat[,metadata$GTF2I_status2 == "m"] < 1.5),
-  w_amp=rowProp(cnmat[,metadata$GTF2I_status2 == "w"] > 2.5),
-  w_del=rowProp(cnmat[,metadata$GTF2I_status2 == "w"] < 1.5),
-  c_amp=rowProp(cnmat[,metadata$GTF2I_status2 == "c"] > 2.5),
-  c_del=rowProp(cnmat[,metadata$GTF2I_status2 == "c"] < 1.5)
+  m_amp=rowProp(cnmat[,meta_dt$GTF2I_status2 == "m"] > 2.5),
+  m_del=rowProp(cnmat[,meta_dt$GTF2I_status2 == "m"] < 1.5),
+  w_amp=rowProp(cnmat[,meta_dt$GTF2I_status2 == "w"] > 2.5),
+  w_del=rowProp(cnmat[,meta_dt$GTF2I_status2 == "w"] < 1.5),
+  c_amp=rowProp(cnmat[,meta_dt$GTF2I_status2 == "c"] > 2.5),
+  c_del=rowProp(cnmat[,meta_dt$GTF2I_status2 == "c"] < 1.5)
 )
 
-# cnmat[grepl("chrX",rownames(cnmat)),4:8]
+write_rds(ncasecoordampdel,"data/ncasecoordampdel.Rds")
 
 gtf=read_tsv(paste0("/home/users/kjyi/Projects/thymus_single_cell/final/",
                     "expression/IRS4/merged_gtf/Homo_sapiens.GRCh38.95.mod3.gtf"),skip=5,
@@ -103,6 +91,31 @@ gene.coord = structure((gtf$start+gtf$end)/2,names=gtf$attribute)
 
 
 # functions --------------------------------------------------------------------------------------------------
+
+
+textplot2 <- function(x, y, words, cex = 1, new = TRUE, show.lines = TRUE, xadj=0,yadj=0, pt.pch=16,pt.col="red",pt.cex=0.5, pt.bg="black", ...){
+  if (new) 
+    plot(x, y, type = "n", ...)
+  lay <- wordcloud::wordlayout(c(x+xadj,x), c(y+yadj,y), rep(words,2), cex, ...)
+  lay <- lay[1:(nrow(lay)/2),]
+  if (show.lines) {
+    for (i in 1:length(x)) {
+      xl <- lay[i, 1]
+      yl <- lay[i, 2]
+      w <- lay[i, 3]
+      h <- lay[i, 4]
+      if (x[i] < xl || x[i] > xl + w || y[i] < yl || y[i] > 
+          yl + h) {
+        points(x[i], y[i], pch = pt.pch, col = pt.col, cex = pt.cex, bg=pt.bg)
+        nx <- xl + 0.5 * w
+        ny <- yl + 0.5 * h
+        lines(c(x[i], nx), c(y[i], ny), col = "grey")
+      }
+    }
+  }
+  text(lay[, 1] + 0.5 * lay[, 3], lay[, 2] + 0.5 * lay[, 4], 
+       words, cex = cex, ...)
+}
 
 plotorignal <- function(data,col=NULL){
   ymax=lapply(data[chrlist],max) %>% unlist %>% max
@@ -238,7 +251,7 @@ plot_cohort_diff <- function(data, col=NULL,genes=NULL, gene_mark_y=NULL,
     if(length(this_chr_genes)>0){
       if(length(this_chr_genes)==1){
         # text(gene.coord[this_chr_genes],this_chr_y,
-             # "*",cex=2,col="black",adj=c(0.5,1))
+        # "*",cex=2,col="black",adj=c(0.5,1))
         text(gene.coord[this_chr_genes],this_chr_y,
              this_chr_genes,adj=c(0.5,0.5),cex=1,col="black")
       }else{
@@ -266,15 +279,9 @@ if(F){
 lineplot_with_p <- function(x,y,p){ # deprecated
   P=(c(p[1],p) + c(p,p[length(p)]))/2  
   for(i in 1:(length(x)-1)){
-    segments(x0 = x[i],y0 = y[i],x1 = x[i+1],y1 = y[i+1],col = circlize::colorRamp2(breaks = c(0,3),
-                                                                                    colors=c('black','red'))(P[i]))
-  }
-}
-
-lineplot_with_p <- function(x,y,p){
-  P=(c(p[1],p) + c(p,p[length(p)]))/2  
-  for(i in 1:(length(x)-1)){
-    segments(x0 = x[i],y0 = y[i],x1 = x[i+1],y1 = y[i+1],col = ifelse(P[i]>3,"red","grey20"))
+    segments(x0 = x[i],y0 = y[i],x1 = x[i+1],y1 = y[i+1],
+             col = circlize::colorRamp2(breaks = c(0,3),
+                                        colors=c('black','red'))(P[i]))
   }
 }
 
@@ -368,27 +375,6 @@ parlayout2 <- function(){
 
 # figures ------------------------------------------------------------------------------------
 
-# plot_gather <- function(data,logscale=F){
-#   parlayout(3)
-#   plot_sqz_cohort()
-#   plot_median_subtracted(data)
-#   plot_cohort_diff(data,logscale=logscale)
-# }
-
-# plot_gather(plogsum)
-# plot_gather(plogavg)
-# plot_gather(zlogsum)
-# plot_gather(zlogavg)
-# plot_gather(logsum)
-# plot_gather(logavg)
-# plot_gather(tpmsum)
-# plot_gather(tpmsum,logscale=T)
-# 
-# parlayout(3)
-# plot_sqz_cohort()
-# plot_cohort_diff(tpmsum,logscale=F,ylim=c(-3000,3000))
-# plot_cohort_diff(tpmsum,logscale=T)
-
 cairo_pdf("figures/coordexp.1.pdf",height = 6.2/2.54,width=21/2.54,pointsize = 12*0.7)
 parlayout(2)
 plot_sqz_cohort()
@@ -411,6 +397,37 @@ table(abs(avg_diff)<5)
 WT_high_region <- names(avg_diff)[avg_diff > 10]
 WT_low_region <- names(avg_diff)[avg_diff < -10]
 
+#
+# load volcdt
+meta_dt <- read_tsv('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata/Thymoma_summary_191118_1stSheet.txt')
+MT_ids <- meta_dt$id[meta_dt$GTF2I_status2 == 'm']
+WT_ids <- meta_dt$id[meta_dt$GTF2I_status2 == 'w']
+CA_ids <- meta_dt$id[meta_dt$GTF2I_status2 == 'c']
+bm_dt <- read_tsv(paste0('~sypark/02_Reference/13_biomart/',
+                         'biomart_human_geneID_transcriptID_hgncsymbol',
+                         '_genetype_ensemblgenename_190522.txt')) %>%
+  dplyr::rename(gene = `Gene name`, gene_type = `Gene type`) %>% dplyr::select(gene, gene_type) %>% unique()
+exp_dt <- read_tsv(paste0("~sypark/00_Project/01_thymoma/10_Final_data/01_expression/",
+                          'IRS4_corrected_v2/',
+                          'thym_137s_tpm_geneSymbol_tumorOnly_IRS4cor.tsv'))
+exp_dt_pcg <- left_join(exp_dt, bm_dt, by="gene") %>%
+  dplyr::filter(gene_type == 'protein_coding') %>% dplyr::select(-gene_type) # filter protein coding only
+l10_exp_dt <- exp_dt %>% mutate_at(vars(-gene), list(~log10(.+0.01)))
+l10_exp_dt <- left_join(l10_exp_dt, bm_dt, by="gene") %>%
+  dplyr::filter(gene_type == 'protein_coding') %>% dplyr::select(-gene_type) # filter protein coding only
+volc_dt <- l10_exp_dt
+volc_dt$MT_mean <- rowMeans(volc_dt[,MT_ids])
+volc_dt$WT_mean <- rowMeans(volc_dt[,WT_ids])
+volc_dt$CA_mean <- rowMeans(volc_dt[,CA_ids])
+volc_dt$WTCA_mean <- rowMeans(volc_dt[,c(CA_ids,WT_ids)])
+volc_dt$WTMT_mean <- rowMeans(volc_dt[,c(MT_ids,WT_ids)])
+my.t.test.p.value <- function(...) {
+  obj<-try(t.test(...), silent=TRUE)
+  if (is(obj, "try-error")) return(NA) else return(obj$p.value)
+}
+volc_dt$t.test.pvalue <- apply(volc_dt[,c(MT_ids, WT_ids)],1,function(x) my.t.test.p.value(x[MT_ids], x[WT_ids]))
+#
+
 WT_high_genes <- volc_dt %>% filter(WT_mean - MT_mean >= 1.5 & t.test.pvalue < 0.001/nrow(volc_dt)) %>% .$gene
 WT_low_genes <- volc_dt %>% filter(WT_mean - MT_mean <= -1.5 & t.test.pvalue < 0.001/nrow(volc_dt)) %>% .$gene
 
@@ -426,12 +443,12 @@ gr.wthighgenes <- GRanges(gene.chr[WT_high_genes],
                                          end=gene.coord[WT_high_genes]+1),
                           id = WT_high_genes)
 gr.wtlowregion <- GRanges(str_replace(WT_low_region,":.*",""),
-                           ranges=IRanges(as.numeric(str_extract(WT_low_region,"(?<=:)[0-9]*(?=_)")),
-                                          end=as.numeric(str_extract(WT_low_region,"(?<=_)[0-9]*"))))
+                          ranges=IRanges(as.numeric(str_extract(WT_low_region,"(?<=:)[0-9]*(?=_)")),
+                                         end=as.numeric(str_extract(WT_low_region,"(?<=_)[0-9]*"))))
 gr.wtlowgenes <- GRanges(gene.chr[WT_low_genes],
-                          ranges=IRanges(gene.coord[WT_low_genes],
-                                         end=gene.coord[WT_low_genes]+1),
-                          id = WT_low_genes)
+                         ranges=IRanges(gene.coord[WT_low_genes],
+                                        end=gene.coord[WT_low_genes]+1),
+                         id = WT_low_genes)
 
 
 concord_wt_high_genes <- subsetByOverlaps(gr.wthighgenes,gr.wthighregion)$id
@@ -452,5 +469,4 @@ plot_cohort_diff(zlogsum, ylim=c(-50,50),genes = concord_genes, gene_mark_y = ma
                  ylab1="Expression gap",ylab2=expression(GTF2I^WT-GTF2I^mut))
 # text(108719949,35,"*",cex=2,col="black")
 dev.off()
-
 save.image("data/figure_exp_cnv_by_coord.Rda")

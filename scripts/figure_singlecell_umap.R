@@ -29,7 +29,7 @@ plot(merged@reductions$bbknn@cell.embeddings,
      # bty = 'l',
      xaxt='n',yaxt='n',xlab="",ylab="",
      xlim=c(1.6,12.4),ylim=c(-10.57,-0.57),
-     asp = 1)
+     asp = 1) 
 par(mar = c(0, 0, 0, 0))
 plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n")
 legendtxt=levels(Idents(merged))
@@ -69,25 +69,28 @@ dev.off()
 # marker figures
 
 # oldmouse %>% FeaturePlot(c("Psmb11", "Aire", "Fezf2", "Sh2d6", "Col1a1", "Cd3e", "Pdpn"), ncol = 3)
-markers=c(Psmb11="Psmb11",
-          Aire="Aire",
-          Fezf2="Fezf2", 
-          Pax1="Pax1",
-          Foxn1="Foxn1",
-          Prox1="Prox1", 
-          Sh2d6="Sh2d6",
-          L1cam="L1cam",
-          Enpep="Enpep (Ly51)",
-          Tnfrsf11a="Tnfrsf11a (Rank)",
-          Ccl21a="Ccl21a",
-          Ivl="Ivl (Involucrin)",
-          Cd80="Cd80",
-          Cldn3="Cldn3",
-          Tgfb2="Tgfb2",
-          Sall1="Sall1",
-          Bmp4="Bmp4",
-          Irs4="Irs4")#%>%tail(3)
-markers=c("Enpep")
+markers=c(
+  Foxn1="Foxn1",
+  Psmb11="Psmb11",
+  Enpep="Enpep (Ly51)",
+  Pax1="Pax1",
+  Fezf2="Fezf2", 
+  Aire="Aire",
+  Cd80="Cd80",
+  Sh2d6="Sh2d6",
+  L1cam="L1cam",
+  Ovol3="Ovol3",
+  Prox1="Prox1", 
+  Tnfrsf11a="Tnfrsf11a (Rank)",
+  Ccl21a="Ccl21a",
+  Ivl="Ivl (Involucrin)",
+  Cldn3="Cldn3",
+  Tgfb2="Tgfb2",
+  Sall1="Sall1",
+  Bmp4="Bmp4",
+  Tbx1="Tbx1",
+  Irs4="Irs4")#%>%tail(3)
+# markers=c("Enpep")
 expdat <- GetAssayData(merged)
 summary(expdat["Psmb11",epi])
 seq(c(0,10))
@@ -120,7 +123,25 @@ for(i in unique(merged$age)){
          cex=1)
   # title(i,adj=0,cex=1.1,line=-0.5)
 }
-plot(0,pty='n',xaxt='n',bty='n',yaxt='n',col="white",xlab="",ylab="")
+
+color.bar <- function(lut, min, max=-min, nticks=11, ticks=seq(min, max, len=nticks), title='') {
+  scale = (length(lut)-1)/(max-min)
+  # dev.new(width=1.75, height=5)
+  plot(c(min,max),c(0,10), type='n', bty='n', xaxt='n', xlab='', yaxt='n', ylab='', main=title,yaxs='i')
+  axis(1, las=1)
+  for (i in 1:(length(lut)-1)) {
+    y = (i-1)/scale + min
+    rect(y,0,y+1/scale,2, col=lut[i], border=NA)
+  }
+  rect(min,0,max,2)
+  mtext(expression(log[10](CPM~"x"~100)),side = 1,line=2.5)
+}
+par(mar=c(5.1,0.5,1.5,0.5),pty='m')
+color.bar(colorRampPalette(c("#29394c","#3288bd","#66c2a5","#abdda4","#e6f598",
+                             "#ffff33","#fdae61","#f76234","#e84053","#ee165d"))(100),
+          0,4)
+
+par(mar=c(0.1,0.1,1.5,0.1))
 for(i in names(markers)){
   plot(merged@reductions$bbknn@cell.embeddings[epi,], 
        pch = 20,
@@ -134,21 +155,5 @@ for(i in names(markers)){
   # title("Title text", adj = 0.5, line = 0)
 }
 
-color.bar <- function(lut, min, max=-min, nticks=11, ticks=seq(min, max, len=nticks), title='') {
-  scale = (length(lut)-1)/(max-min)
-  # dev.new(width=1.75, height=5)
-  plot(c(min,max),c(0,10), type='n', bty='n', xaxt='n', xlab='', yaxt='n', ylab='', main=title,yaxs='i')
-  axis(1, las=1)
-  for (i in 1:(length(lut)-1)) {
-    y = (i-1)/scale + min
-    rect(y,0,y+1/scale,2, col=lut[i], border=NA)
-  }
-  rect(min,0,max,2)
-  mtext(expression(log[10](count)),side = 1,line=2.5)
-}
-par(mar=c(5.1,0.5,1.5,0.5),pty='m')
-color.bar(colorRampPalette(c("#29394c","#3288bd","#66c2a5","#abdda4","#e6f598",
-                             "#ffff33","#fdae61","#f76234","#e84053","#ee165d"))(100),
-          0,4)
 
 dev.off()

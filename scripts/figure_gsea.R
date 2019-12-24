@@ -24,7 +24,6 @@ stats= list(
 )
 
 h_list <- getGmt('~kjyi/ref/msigdb/h.all.v6.2.symbols.gmt') %>% geneIds()
-# c2_list <- getGmt('~sypark/00_Project/01_thymoma/10_Final_data/04_GSVA/genesets/c2.cp.v6.2.symbols.gmt') %>% geneIds()
 c5_list <- getGmt('~kjyi/ref/msigdb/c5.all.v6.2.symbols.gmt') %>% geneIds()
 c2_list <- getGmt('~kjyi/ref/msigdb/c2.all.v6.2.symbols.gmt') %>% geneIds()
 
@@ -107,5 +106,8 @@ x$leadingEdge = lapply(x$leadingEdge,function(x){paste(x,collapse=",")}) %>% unl
 x$pathwaygroup=str_replace(x$pathway,"_.*","")
 
 write_csv(x,"tables/gsea_top_pathway_info_mt_vs_wt.2.csv")
+
+write_rds(fgseaRes,"data/fgseaRds_mw_all_go_hm_kegg.Rds")
+
 
 # end of script --------------------------------------------------------------------------------------------------------

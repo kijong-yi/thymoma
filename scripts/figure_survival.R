@@ -6,10 +6,19 @@ meta_dt <- read_tsv('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata/Thy
 
 meta_dt$group = ifelse(meta_dt$GTF2I_status2 %in% c("m","c"),c(m="mutant",c="carcinoma")[meta_dt$GTF2I_status2],
                        ifelse(meta_dt$corrected_IRS4_TPM >= 30,"wildtypeIRShigh","wildtypeIRSlow"))
+meta_dt$stagegroup = ifelse(meta_dt$Stage %in% c('I','II'), 
+                                         'I,II',
+                                         ifelse(meta_dt$Stage %in% c("IVa","IVb"), "IVa/IVb","III"))
 
 fit1 <- survfit(Surv(RecurFreeSurvival/365, Recur_event) ~ group, data = meta_dt,conf.type = "log-log")
 names(fit1$strata) = c("Carcinoma","GTF2I-mutant","GTF2I-WT,IRS4 high","GTF2I-WT,IRS4 low")
+fit1 %>% summary
+
+fit2 <- survfit(Surv(RecurFreeSurvival/365, Recur_event) ~ group, data = meta_dt[meta_dt$group %in% c("wildtypeIRShigh","wildtypeIRSlow"),],conf.type = "log-log")
+survdiff(Surv(RecurFreeSurvival/365, Recur_event) ~ group, data = meta_dt[meta_dt$group %in% c("wildtypeIRShigh","wildtypeIRSlow"),])
+plot(fit2)
 {
+  lwd=2
   cairo_pdf("figures/KM_survival.1.pdf",height = 7/2.54,width=7/2.54,pointsize = 12*0.7)
   par(mar=c(4,4,0.7,0.7))
   plot(fit1,
@@ -24,8 +33,10 @@ names(fit1$strata) = c("Carcinoma","GTF2I-mutant","GTF2I-WT,IRS4 high","GTF2I-WT
 
 
 
+
+
 #Coxph
-thymoma_scores <- readRDS("~/Projects/thymus_single_cell/final/models/thymoma_scores.Rds")
+thymoma_scores <- readRDS("~kjyi/Projects/thymus_single_cell/final/models/thymoma_scores.Rds")
 thymoma_scores<-thymoma_scores %>% rownames_to_column("id")
 m_meta_dt <- meta_dt %>% mutate(his_group = ifelse(histologic_type %in% c('A','AB','MN-T'),'A',
                                                    ifelse(histologic_type %in% c('TC','NE'),'C','B'))) %>%
@@ -33,6 +44,8 @@ m_meta_dt <- meta_dt %>% mutate(his_group = ifelse(histologic_type %in% c('A','A
 m_meta_dt$GTF2I_status2 <- factor(m_meta_dt$GTF2I_status2, levels = c('m','w','c'))
 
 m_meta_dt <- left_join(m_meta_dt,thymoma_scores)
+
+m_meta_dt <- filter(m_meta_dt,GTF2I_status2 != "c")
 
 m_meta_dt$cTEC
 m_meta_dt$Tuft
@@ -56,6 +69,13 @@ m_meta_dt$"GTF2I L404H" = ifelse(m_meta_dt$GTF2I_status2 %in% "m","Mutant","Wild
 m_meta_dt$"IRS4" = ifelse(m_meta_dt$corrected_IRS4_TPM>30,"TPM > 30", "TPM < 30")
 m_meta_dt$"IRS4 overexp." = ifelse(m_meta_dt$corrected_IRS4_TPM>30,"TPM > 30", "TPM < 30")
 
+m_meta_dt$"GTF2I/IRS4 genotype" = ifelse(m_meta_dt$GTF2I_status2 %in% "m","Mutant",
+                                         ifelse(m_meta_dt$corrected_IRS4_TPM>30,"WT/IRS4-high",
+                                                "WT/IRS4-low"))
+m_meta_dt$"GTF2I/IRS4 genotype" = factor(m_meta_dt$"GTF2I/IRS4 genotype",levels = c("Mutant","WT/IRS4-low","WT/IRS4-high"))
+
+
+
 bigcoxmodel <-coxph(Surv(RecurFreeSurvival, Recur_event) ~ 
                       Gender +
                       `Age at diagnosis` +
@@ -66,43 +86,47 @@ bigcoxmodel <-coxph(Surv(RecurFreeSurvival, Recur_event) ~
                       IRS4 + `GTF2I L404H` + `Progenitor Index`,
                     data=m_meta_dt); summary(bigcoxmodel); ggforest(bigcoxmodel,main = "Hazard ratio of Cox proportional model",fontsize =0.9,cpositions = c(0.02, 0.22, 0.4))
 
-# GenderMALE                   0.4550    1.5762   0.6129  0.742   0.4578  
-# Age at diagnosis≥60         -0.4706    0.6246   0.5829 -0.807   0.4195  
-# `Myasthenia gravis`Present  -0.9377    0.3915   0.7631 -1.229   0.2191  
-# `Masaoka stage`III,IV        1.4059    4.0790   0.5521  2.546   0.0109 *
-# IRS4TPM > 30                 1.4299    4.1781   0.6776  2.110   0.0348 *
-# `GTF2I L404H`Wild-type       1.4180    4.1289   0.8547  1.659   0.0971 .
-# `Progenitor Index`           0.7911    2.2057   0.4382  1.805   0.0710 .
-
-
 bigcoxmodel2 <-coxph(Surv(RecurFreeSurvival, Recur_event) ~ 
-                      Gender +
-                      `Age at diagnosis` +
-                      # Age +
-                      # `Myasthenia gravis` +
-                      `Masaoka stage` +
-                      # `Masaoka stage group` +
-                      `IRS4 overexp.` + `GTF2I L404H` + `Progenitor Index`,
-                    data=m_meta_dt); summary(bigcoxmodel2); ggforest(bigcoxmodel2,main = "Hazard ratio of Cox proportional model",fontsize =0.9,cpositions = c(0.02, 0.22, 0.4))
+                       Gender +
+                       `Age at diagnosis` +
+                       # Age +
+                       # `Myasthenia gravis` +
+                       `Masaoka stage` +
+                       # `Masaoka stage group` +
+                       `IRS4 overexp.` + `GTF2I L404H` + `Progenitor Index`,
+                     data=m_meta_dt); summary(bigcoxmodel2); ggforest(bigcoxmodel2,main = "Hazard ratio of Cox proportional model",fontsize =0.9,cpositions = c(0.02, 0.22, 0.4))
 
-# GenderMALE                   0.5741    1.7755   0.6207  0.925   0.3551  
-# Age at diagnosis≥60         -0.2836    0.7530   0.5635 -0.503   0.6147  
-# `Masaoka stage`III,IV        1.3201    3.7439   0.5387  2.451   0.0143 *
-# IRS4TPM > 30                 1.2808    3.5997   0.6695  1.913   0.0557 .
-# `GTF2I L404H`Wild-type       1.4188    4.1324   0.8451  1.679   0.0932 .
-# `Progenitor Index`           0.9473    2.5788   0.4091  2.315   0.0206 *
+bigcoxmodel3 <-coxph(Surv(RecurFreeSurvival, Recur_event) ~ 
+                       Gender +
+                       # `Age at diagnosis` +
+                       # Age +
+                       # `Myasthenia gravis` +
+                       # `Masaoka stage` +
+                       `Masaoka stage group` +
+                       # `IRS4 overexp.` + 
+                       # `GTF2I L404H` + 
+                       # his_group+
+                       `GTF2I/IRS4 genotype`,
+                     data=m_meta_dt); summary(bigcoxmodel3); ggforest(bigcoxmodel3,main = "Hazard ratio of Cox proportional model",fontsize =0.9,
+                                                                      cpositions = c(0.02, 0.22, 0.4))
 
 
-
+model=bigcoxmodel3
+data=NULL
 # function--------------------------------------------------------------------------------------------------------------
-ggforest2 <- function (model, data = NULL, main = "", cpositions = c(0.02, 0.18, 0.3,0.4,0.95), fontsize = 0.7, refLabel = "reference", noDigits = 2) 
+ggforest2 <- function (model, data = NULL, main = "",
+                       cpositions = c(0.02, 0.18, 0.3,0.4,0.95),whisker_start_position=0.6,
+                       fontsize = 0.7, 
+                       refLabel = "reference", 
+                       noDigits = 2, second_column_labels=NULL,first_column_labels=NULL) 
 {
+  
   conf.high <- conf.low <- estimate <- NULL
   stopifnot(class(model) == "coxph")
   data <- eval(model$call$data)
   terms <- attr(model$terms, "dataClasses")[-1]
-  coef <- as.data.frame(tidy(model))
-  gmodel <- glance(model)
+  coef <- as.data.frame(broom::tidy(model))
+  gmodel <- broom::glance(model)
   allTerms <- lapply(seq_along(terms), function(i) {
     var <- names(terms)[i]
     if (terms[i] %in% c("factor", "character")) {
@@ -145,14 +169,23 @@ ggforest2 <- function (model, data = NULL, main = "", cpositions = c(0.02, 0.18,
   toShowExpClean$var = as.character(toShowExpClean$var)
   toShowExpClean$var[duplicated(toShowExpClean$var)] = ""
   # toShowExpClean$N <- paste0("(N=", toShowExpClean$N, ")")
-  toShowExpClean <- toShowExpClean[nrow(toShowExpClean):1, 
-                                   ]
+  toShowExpClean <- toShowExpClean[nrow(toShowExpClean):1,]
+  
+  if(!is.null(second_column_labels)){toShowExpClean$level = second_column_labels}
+  if(!is.null(first_column_labels)){toShowExpClean$var = first_column_labels}
+  
+  
   rangeb <- range(toShowExpClean$conf.low, toShowExpClean$conf.high, 
                   na.rm = TRUE)
   breaks <- axisTicks(rangeb/2, log = TRUE, nint = 7)
   rangeplot <- rangeb
-  rangeplot[1] <- rangeplot[1] - diff(rangeb)
-  rangeplot[2] <- rangeplot[2] + 0.15 * diff(rangeb)
+  # whisker_start_position == 0.25 -> 1/3
+  # whisker_start_position == 0.5 --> 1
+  # whisker_start_position == 0.75 --> 3
+  
+  rangeplot[1] <- rangeplot[1] - diff(rangeb)*whisker_start_position/(1-whisker_start_position)
+  rangeplot[2] <- rangeplot[2] + 0.17 * diff(rangeb)
+  # rangeplot[2] <- rangeplot[2] + 0.1 * diff(rangeb)
   width <- diff(rangeplot)
   y_variable <- rangeplot[1] + cpositions[1] * width
   y_nlevel <- rangeplot[1] + cpositions[2] * width
@@ -180,17 +213,21 @@ ggforest2 <- function (model, data = NULL, main = "", cpositions = c(0.02, 0.18,
     # ggtitle(main) +
     scale_y_log10(name = "",
                   labels = sprintf("%g", breaks), expand = c(0.02, 0.02),
-                  breaks = breaks) + theme_light() + theme(panel.grid.minor.y = element_blank(),
-                                                           panel.grid.minor.x = element_blank(), panel.grid.major.y = element_blank(),
-                                                           legend.position = "none", panel.border = element_blank(),
-                                                           axis.title.y = element_blank(), axis.text.y = element_blank(),
-                                                           axis.ticks.y = element_blank(), plot.title = element_text(hjust = 0.5)) +
+                  breaks = breaks) +
+    theme_light() + 
+    theme(panel.grid.minor.y = element_blank(),
+          panel.grid.minor.x = element_blank(), panel.grid.major.y = element_blank(),
+          legend.position = "none", panel.border = element_blank(),
+          axis.title.y = element_blank(), axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(), plot.title = element_text(hjust = 0.5)) +
     xlab("") +
     annotate(geom = "text", x = x_annotate, y = exp(y_variable),
              label = toShowExpClean$var, fontface = "bold", hjust = 0,
              size = annot_size_mm) +
-    annotate(geom = "text", x = x_annotate,
-             y = exp(y_nlevel), hjust = 0, label = ifelse(toShowExpClean$level=="","(continuous)",as.character(toShowExpClean$level)),
+    annotate(geom = "text", x = x_annotate, parse=T,
+             y = exp(y_nlevel), hjust = 0, 
+             # label = ifelse(toShowExpClean$level=="","(continuous)",as.character(toShowExpClean$level)),
+             label = toShowExpClean$level,
              # vjust = -0.1,
              size = annot_size_mm) +
     annotate(geom = "text",
@@ -211,7 +248,7 @@ ggforest2 <- function (model, data = NULL, main = "", cpositions = c(0.02, 0.18,
              hjust = 0, fontface = "italic") +
     annotate(geom = "text",
              x = 0.5, y = exp(y_variable),
-             label = paste0("# Events: ", gmodel$nevent, "; Global p-value (Log-Rank): ", format.pval(gmodel$p.value.log, eps = ".001"),
+             label = paste0("# Events:^2 ", gmodel$nevent, "; Global p-value (Log-Rank): ", format.pval(gmodel$p.value.log, eps = ".001"),
                             " \nAIC: ", round(gmodel$AIC, 2), "; Concordance Index: ", round(gmodel$concordance, 2)), 
              size = annot_size_mm, hjust = 0, vjust = 1.2, fontface = "italic") +
     annotate(geom = "text",
@@ -224,9 +261,57 @@ ggforest2 <- function (model, data = NULL, main = "", cpositions = c(0.02, 0.18,
 }
 # ---------------------------------------------------------------------------------------------------------------------
 
-cairo_pdf("figures/coxph.1.pdf",height = 10/2.54,width=23/2.54,pointsize = 12*0.7)
-ggforest2(bigcoxmodel2,main = "",fontsize =1,cpositions = c(0.02, 0.18, 0.28,0.33,0.94))
+cairo_pdf("figures/coxph.1.pdf",height = 11/2.54,width=23/2.54,pointsize = 12*0.7)
+ggforest2(bigcoxmodel3,main = "",fontsize =1,cpositions = c(0.01, 0.19, 0.37,0.42,0.94),whisker_start_position=0.6,
+          second_column_labels = c("Female",
+                                   "Male",
+                                   expression(paste('I, II')),
+                                   "III",
+                                   expression(paste('IVa, IVb')),
+                                   expression(GTF2I^mut),
+                                   expression(GTF2I^WT~IRS4^low),
+                                   expression(GTF2I^WT~IRS4^high)) %>% rev,
+          first_column_labels = c("","","GTF2I/IRS4 status","","","Masaoka stage","","Gender"))
 dev.off()
+
+# -------------------------------------------------------
+
+fit1 <- survfit(Surv(RecurFreeSurvival/365, Recur_event) ~ group, data = meta_dt,conf.type = "log-log")
+names(fit1$strata) = c("Carcinoma","GTF2I-mutant","GTF2I-WT,IRS4 high","GTF2I-WT,IRS4 low")
+
+fit2 <- survfit(Surv(RecurFreeSurvival/365, Recur_event) ~ stagegroup, data = m_meta_dt,conf.type = "log-log")
+names(fit2$strata) = c("I,II","III","IVa/IVb")
+
+{
+  cairo_pdf("figures/KM_survival.2.pdf",height = 7/2.54,width=14/2.54,pointsize = 12*0.7)
+  par(mar=c(4,0,0.7,0),mfrow=c(1,2),oma=c(0,4,0,0.7))
+  
+  plot(fit2,
+       lwd=2,
+       col=c("grey60","grey40","black"),
+       ylab="",
+       xlab="",
+       # yaxt='n',
+       mark.time=T)
+  mtext("Time (years)",1,2)
+  mtext("Recurrence free survival probability",2,2)
+  
+  legend("bottomright",legend=c("I,II","III","IVa,IVb"),
+         bty="n",lty=1,lwd=2,col=c("grey60","grey40","black"),title = "Masaoka stage")
+  # mtext(text = "(Carcinoma excluded)",side = 1,at = 0,line = -2,adj = 0)
+  plot(fit1,
+       lwd=2,
+       col=c("#00A087FF","#3C5488FF","#DC0000FF","#F39B7FFF"),
+       ylab="",
+       yaxt='n',
+       xlab="",mark.time=T)
+  legend("bottomright",legend=c(expression(GTF2I^mut),expression(GTF2I^WT~IRS4^low),expression(GTF2I^WT~IRS4^high),"Thymic carcinoma"),
+         bty="n",lty=1,lwd=2,col=c("#3C5488FF","#F39B7FFF","#DC0000FF","#00A087FF"))
+  mtext("Time (years)",1,2)
+  # mtext("Recurrence free survival probability",2,2)
+  
+  dev.off()
+}
 
 
 

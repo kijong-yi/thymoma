@@ -1,14 +1,13 @@
 library(tidyverse)
-library(ComplexHeatmap)
-library(ggsci)
-# library("scales")
-library(circlize)
-library(ggrepel)
-require(GSEABase)
-
+library(ComplexHeatmap, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
+library(ggsci, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
+library(circlize, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
+library(ggrepel, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
+require(GSEABase, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
+library(seriation, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
 
 # sypark's code --------------------------------------------------------------------------------------------------------
-meta_dt <- read_tsv(paste0('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata/Thymoma_summary_191115_1stSheet.txt'))
+meta_dt <- read_tsv(paste0('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata/Thymoma_summary_191205_1stSheet.txt'))
 MT_ids <- meta_dt$id[meta_dt$GTF2I_status2 == 'm']
 WT_ids <- meta_dt$id[meta_dt$GTF2I_status2 == 'w']
 CA_ids <- meta_dt$id[meta_dt$GTF2I_status2 == 'c']
@@ -66,21 +65,22 @@ dim(hm_dt)
 
 
 # gene set prep --------------------------------------------------------------------------------------------------------
-h_list <- getGmt('~kjyi/ref/msigdb/h.all.v6.2.symbols.gmt') %>% geneIds()
-c2_list <- getGmt('~sypark/00_Project/01_thymoma/10_Final_data/04_GSVA/genesets/c2.cp.v6.2.symbols.gmt') %>% geneIds()
-c5_list <- getGmt('~kjyi/ref/msigdb/c5.all.v6.2.symbols.gmt') %>% geneIds()
-all_list <- append(append(h_list,c2_list),c5_list);rm(h_list,c2_list,c5_list)
+# h_list <- getGmt('~kjyi/ref/msigdb/h.all.v6.2.symbols.gmt') %>% geneIds()
+# c2_list <- getGmt('~sypark/00_Project/01_thymoma/10_Final_data/04_GSVA/genesets/c2.cp.v6.2.symbols.gmt') %>% geneIds()
+# c5_list <- getGmt('~kjyi/ref/msigdb/c5.all.v6.2.symbols.gmt') %>% geneIds()
+# all_list <- append(append(h_list,c2_list),c5_list);rm(h_list,c2_list,c5_list)
 
 
-names(all_list)[grepl("DEVELOP",names(all_list))&grepl("THYM",names(all_list))]
+# names(all_list)[grepl("DEVELOP",names(all_list))&grepl("THYM",names(all_list))]
+# 
+# names(all_list)[grepl("GO",names(all_list))&grepl("_T_CELL",names(all_list))]
 
-names(all_list)[grepl("GO",names(all_list))&grepl("_T_CELL",names(all_list))]
-
-all_list <- list("T cell development" = c("CD3D","CD3E","GPAP2","LCK","TRAT1"),
-                 "Metabolic process"=c("CYP2C9","CYP3A5","CYP3A4","AKR1B10","STAR","UGT2B7","PPARGC1A","AKR1D1","SRD5A1","WNT4","SLC34A1","ASS1"),
+all_list <- list("T cell development" = c("CD3D","CD3E","GPAP2","LCK"),
+                 "Metabolic process"=c("CYP2C9","CYP3A5","CYP3A4","STAR","UGT2B7","PPARGC1A","AKR1D1","SRD5A1","WNT4","SLC34A1","ASS1"),
                  "ECM organization" = c("ADAMTS20","COL9A3","MMP3","THSD4","COL11A1"),
                  "TGFβ signaling"=c("GDF5","GDF1","BMP2","BMP4","LEFTY2","BMP8B","LRG1","SMAD7","GDF6","BMP6","TGFB2"),
-                 "Development"=c("TBX1","MYH6","WNT2","HMGA2","WNT5A","BMP4","CX3CR1","IRX2","IRX4","SALL1"))
+                 "Development"=c("TBX1","MYH6","WNT2","HMGA2","WNT5A","BMP4","CX3CR1","IRX2","IRX4","SALL1"),
+                 "TNFα signaling/inflammation"=c("CCL20","CXCL13"))
 selected_names <- names(all_list)
 #
 # selected_names <- c(
@@ -117,8 +117,6 @@ if(F){
   structure(lapply(x,function(x){table(all_list[[x]]%in%rownames(hm_dt))}),names=x)
 }
 
-library(seriation)
-
 # o1 = seriate(dist(hm_dt), method = "TSP") # about genes
 o1p = seriate(as.dist(1-cor(t(hm_dt))), method = "TSP") # about genes
 
@@ -127,7 +125,13 @@ o1p = seriate(as.dist(1-cor(t(hm_dt))), method = "TSP") # about genes
 
 
 length(selected_names)
-myninecolor=RColorBrewer::brewer.pal(9,"Set1")[c(1,5,2,4,3)]
+myninecolor=RColorBrewer::brewer.pal(9,"Set1")[c(1,5,2,4,3,6)]
+myninecolor=c("#E41A1C",
+              "#FF7F00",
+              "#377EB8",
+              "#984EA3",
+              "#4DAF4A",
+              "#008280")
 all_names = rownames(hm_dt)
 all_color=rep("black",length(all_names))
 for(i in 1:length(selected_names)){
@@ -147,9 +151,23 @@ top_anno <- HeatmapAnnotation("Group"= hm_annot_dt$GTF2I_status2,
                               "Histologic type"= hm_annot_dt$histologic_type,
                               "Purity" = hm_annot_dt$Purity,
                               # "Cohort" = hm_annot_dt$cohort %>% str_replace("_CancerCell",""),
-                              col = list("Group" = gtf2i_pal, "Histologic type" = histo_pal,"Purity" = purity_pal),
+                              col = list("Group" = gtf2i_pal,
+                                         "Histologic type" = histo_pal,
+                                         "Purity" = purity_pal),
                               # gp = gpar(cex=0.75),
                               annotation_legend_param = list(
+                                "Histologic type" = list(
+                                  title="Histologic type",
+                                  at = c("A","AB","MN-T","B1","B2","B3","NE","TC"),
+                                  labels = c("Type A thymoma",
+                                             "Type AB thymoma",
+                                             "Micronodular thymoma with lymphoid stroma",
+                                             "Type B1 thymoma",
+                                             "Type B2 thymoma",
+                                             "Type B3 thymoma",
+                                             "Neuroendocrine carcinoma",
+                                             "Thymic carcinoma (Squamous cell carcinoma,Undifferentiated ca)")
+                                ),
                                 "Group" = list(
                                   title = "Group",
                                   at = c("m", "w","c"),
@@ -163,10 +181,10 @@ lgd = Legend(labels = selected_names, title = "Gene ontology", legend_gp = gpar(
              labels_gp = gpar(col = myninecolor),
              type = "lines")
 
-lgd2 = Legend(col_fun = exp_pal, title = "Gene exp., row-scaled")
+lgd2 = Legend(col_fun = exp_pal, title = "Normalized gene expression")
 
 lgd12=packLegend(lgd,lgd2)
-# draw(lgd12)
+draw(lgd12)
 
 h1 <- Heatmap(hm_dt,
               row_order = get_order(o1p),width = unit(9,"cm"),height = unit(11,"cm"),
@@ -188,7 +206,7 @@ h1 <- Heatmap(hm_dt,
 # draw(lgd12)
 draw(h1, annotation_legend_list = lgd12)
 
-cairo_pdf("figures/heatmap_rna_expression.1.pdf",height = 15/2.54,width=18/2.54,pointsize = 12*0.7)
+cairo_pdf("figures/heatmap_rna_expression.1.pdf",height = 15/2.54,width=25/2.54,pointsize = 12*0.7)
 draw(h1, annotation_legend_list = lgd12)
 dev.off()
 

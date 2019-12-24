@@ -1,6 +1,12 @@
 # /home/users/sypark/00_Project/01_thymoma/10_Final_data/17_Figures_for_publication
 library(tidyverse)
 library(ggsci)
+library(ggsci)
+library(scales)
+library(circlize)
+library(fgsea)
+require(GSVA)
+require(GSEABase)
 
 meta_dt <- read_tsv('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata/Thymoma_summary_191115_1stSheet.txt')
 volc_dt <- read_tsv(paste0("~sypark/00_Project/01_thymoma/10_Final_data/01_expression/",
@@ -27,29 +33,18 @@ h_list <- getGmt('~kjyi/ref/msigdb/h.all.v6.2.symbols.gmt') %>% geneIds()
 c5_list <- getGmt('~kjyi/ref/msigdb/c5.all.v6.2.symbols.gmt') %>% geneIds()
 c2_list <- getGmt('~kjyi/ref/msigdb/c2.all.v6.2.symbols.gmt') %>% geneIds()
 all_list <- append(append(h_list,c2_list),c5_list);rm(h_list,c2_list,c5_list)
-# all_list<-all_list[str_replace(names(all_list),"_.*","") %in% c("GO","HALLMARK","KEGG")]
-all_list<-all_list[str_replace(names(all_list),"_.*","") %in% c("GO","REACTOME")]
-# all_list$REACTOME_PI3K_CASCADE
-
+all_list <- all_list[str_replace(names(all_list),"_.*","") %in% c("GO","HALLMARK","KEGG","REACTOME")]
 
 volc_dt[1:3,1:3]
 
-expmat =as.matrix(volc_dt[,meta_dt$id[meta_dt$final_cellularity>0.2]])
-rownames(expmat) = volc_dt$gene
-
-# purityfiltered_all_gs <- gsva(expr = expmat,
-#                               gset.idx.list = all_list)
-
-
-# purityfiltered_all_gs_t_meta <- left_join(purityfiltered_all_gs_t,meta_dt)
-
-purityfiltered_WT_samplenames=meta_dt$id[meta_dt$GTF2I_status2=="w" & meta_dt$final_cellularity>0.2]
+# purityfiltered_WT_samplenames=meta_dt$id[meta_dt$GTF2I_status2=="w" & meta_dt$final_cellularity>0.2]
 WT_samplenames=meta_dt$id[meta_dt$GTF2I_status2=="w"]
 
-geneexpresionmatrix_WT_purityfiltered <- volc_dt[,c("gene",purityfiltered_WT_samplenames)] %>% as.data.frame %>% column_to_rownames("gene") %>% as.matrix
+# geneexpresionmatrix_WT_purityfiltered <- volc_dt[,c("gene",purityfiltered_WT_samplenames)] %>% as.data.frame %>% column_to_rownames("gene") %>% as.matrix
 geneexpresionmatrix_WT <- volc_dt[,c("gene",WT_samplenames)] %>% as.data.frame %>% column_to_rownames("gene") %>% as.matrix
 
 all_gs_res <- gsva(geneexpresionmatrix_WT,all_list)
+write_rds(all_gs_res,"data/gsva_WT_all_go_hm_kegg_reactome.Rds")
 
 correlation_with_IRS4 = cor(geneexpresionmatrix_WT["IRS4",],t(all_gs_res))
 correlation_with_IRS4=t(correlation_with_IRS4)%>%{colnames(.)="IRS4";.} %>% as.data.frame
@@ -70,18 +65,22 @@ if(F){
 # # GO_INSULIN_LIKE_GROWTH_FACTOR_RECEPTOR_SIGNALING_PATHWAY
 # GO_INTRACELLULAR_LIPID_TRANSPORT
 plot(pmax(0,geneexpresionmatrix_WT["IRS4",]),all_gs_res["GO_MAP_KINASE_ACTIVITY",],
-     col=circlize::colorRamp2(0:1,c("red","black"))(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)]))
+     bg=circlize::colorRamp2(0:1,c("red","black"))(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)]),pch=21,cex=2)
+
+plot(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)],all_gs_res["GO_INTRACELLULAR_LIPID_TRANSPORT",],
+     bg=circlize::colorRamp2(c(0,0.3,0.7),c("blue","grey","red"))(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)]),pch=21,cex=2)
+
 
 plot(pmax(0,geneexpresionmatrix_WT["IRS4",]),all_gs_res["GO_INTRACELLULAR_LIPID_TRANSPORT",],
-     col=circlize::colorRamp2(0:1,c("red","black"))(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)]))
+     bg=circlize::colorRamp2(c(0,0.3,0.7),c("blue","grey","red"))(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)]),pch=21,cex=2)
 plot(pmax(0,geneexpresionmatrix_WT["IRS4",]),all_gs_res["GO_WNT_SIGNALOSOME",],
-     col=circlize::colorRamp2(0:1,c("red","black"))(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)]))
+     bg=circlize::colorRamp2(0:1,c("red","black"))(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)]),pch=21,cex=2)
 plot(pmax(0,geneexpresionmatrix_WT["IRS4",]),all_gs_res["REACTOME_ENERGY_DEPENDENT_REGULATION_OF_MTOR_BY_LKB1_AMPK",],
-     col=circlize::colorRamp2(0:1,c("red","black"))(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)]))
+     bg=circlize::colorRamp2(0:1,c("red","black"))(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)]),pch=21,cex=2)
 plot(pmax(0,geneexpresionmatrix_WT["IRS4",]),all_gs_res["GO_INSULIN_LIKE_GROWTH_FACTOR_RECEPTOR_SIGNALING_PATHWAY",],
-     col=circlize::colorRamp2(0:1,c("red","black"))(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)]))
+     bg=circlize::colorRamp2(0:1,c("red","black"))(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)]),pch=21,cex=2)
 plot(pmax(0,geneexpresionmatrix_WT["IRS4",]),all_gs_res["REACTOME_PI3K_CASCADE",],
-     col=circlize::colorRamp2(0:1,c("red","black"))(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)]))
+     bg=circlize::colorRamp2(0:1,c("red","black"))(meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)]),pch=21,cex=2)
 
 
 all_list["GO_INTRACELLULAR_LIPID_TRANSPORT"]
@@ -116,25 +115,37 @@ mtexti <- function(text, side, off = 0.25,
 # rSquared <- summary(model1)$r.squared
 # pVal <- anova(model1)$'Pr(>F)'[1]
 
-cor(tmp_df$IRS4, tmp_df$IGFsig)
-cor(tmp_df$IGFsig,tmp_df$IRS4)
-cor(tmp_df$IGFsig,tmp_df$IRS4)^2
+# cor(tmp_df$IRS4, tmp_df$IGFsig)
+# cor(tmp_df$IGFsig,tmp_df$IRS4)
+# cor(tmp_df$IGFsig,tmp_df$IRS4)^2
 
 cairo_pdf("figures/IRS4_pathway_cor.1.pdf",height = 12/2.54,width=7/2.54,pointsize = 12*0.7)
 par(mar=c(0,0,0,0),oma=c(4.5,4.5,1.7,0.7),mfrow=c(2,1))
 tmp_df <- data.frame(IRS4=pmax(0,geneexpresionmatrix_WT["IRS4",]),
+                     IRS4_orig=geneexpresionmatrix_WT["IRS4",],
                      IGFsig=all_gs_res["GO_INSULIN_LIKE_GROWTH_FACTOR_RECEPTOR_SIGNALING_PATHWAY",],
+                     # lipid=all_gs_res["REACTOME_PI3K_CASCADE",],
                      lipid=all_gs_res["GO_INTRACELLULAR_LIPID_TRANSPORT",],
-                     histol=histo_pal[meta_dt$histologic_type[match(WT_samplenames,meta_dt$id)]])
-model1 <- lm(IGFsig ~ IRS4, data=tmp_df)
-model2 <- lm(lipid ~ IRS4, data=tmp_df)
+                     histol=histo_pal[meta_dt$histologic_type[match(WT_samplenames,meta_dt$id)]],
+                     purity=meta_dt$final_cellularity[match(WT_samplenames,meta_dt$id)])
+summary(lm(IGFsig ~ IRS4_orig+purity, data=tmp_df))
+summary(model0)
+summary(lm(IGFsig ~ purity, data=tmp_df))
+
+model1 <- lm(IGFsig ~ IRS4_orig, data=tmp_df)
+summary(model1)
+
+
+model2 <- lm(lipid ~ IRS4_orig, data=tmp_df)
+cor(tmp_df$IRS4_orig,tmp_df$IGFsig)
+cor(tmp_df$IRS4_orig,tmp_df$IGFsig)
 CI <- predict(model1, newdata=tmp_df, interval="prediction",level=0.9) %>% as.data.frame
 CI2 <- predict(model2, newdata=tmp_df, interval="prediction",level=0.9) %>% as.data.frame
 plot(1000,xlim=c(0,max(tmp_df$IRS4)),ylim=c(min(tmp_df$IGFsig),max(tmp_df$IGFsig)),
      xlab="",ylab="",xaxt="n",las=2)
-mtexti("IGF receptor signaling score",2,0.45)
-lines(x=tmp_df$IRS4, y=CI$fit, lwd=1.2,col="grey50")
-polygon(c(sort(tmp_df$IRS4),rev(sort(tmp_df$IRS4))),c(CI$lwr[order(tmp_df$IRS4)],rev(CI$upr[order(tmp_df$IRS4)])),
+mtext("IGF receptor signaling score",2,2.45)
+lines(x=tmp_df$IRS4_orig, y=CI$fit, lwd=1.2,col="grey50")
+polygon(c(sort(tmp_df$IRS4_orig),rev(sort(tmp_df$IRS4_orig))),c(CI$lwr[order(tmp_df$IRS4_orig)],rev(CI$upr[order(tmp_df$IRS4_orig)])),
         col="#00000010",lty = 0)
 points(tmp_df$IRS4,tmp_df$IGFsig,bg=histo_pal[meta_dt$histologic_type[match(WT_samplenames,meta_dt$id)]],pch=21,cex=1.5)
 text(0,max(tmp_df$IGFsig),
@@ -149,9 +160,9 @@ mtext(bquote(paste(bold("GTF2I"^WT)~"(n"~"="~.(nrow(tmp_df)),")")))
 plot(1000,xlim=c(0,max(tmp_df$IRS4)),ylim=c(min(tmp_df$lipid),max(tmp_df$lipid)),
      xlab=expression(log[10]~TPM~of~IRS4),ylab="PI3K cascade score",las=2,xaxt="n")
 axis(1,at = c(0,1,2,log10(400)),labels = c(0,10,100,400))
-mtexti("Intracellular lipid transport - enrichment score",2,0.45)
-lines(x=tmp_df$IRS4, y=CI2$fit, lwd=1.2,col="grey50")
-polygon(c(sort(tmp_df$IRS4),rev(sort(tmp_df$IRS4))),c(CI2$lwr[order(tmp_df$IRS4)],rev(CI2$upr[order(tmp_df$IRS4)])),
+mtext("Intracellular lipid transport score",2,2.45)
+lines(x=tmp_df$IRS4_orig, y=CI2$fit, lwd=1.2,col="grey50")
+polygon(c(sort(tmp_df$IRS4_orig),rev(sort(tmp_df$IRS4_orig))),c(CI2$lwr[order(tmp_df$IRS4_orig)],rev(CI2$upr[order(tmp_df$IRS4_orig)])),
         col="#00000010",lty = 0)
 points(tmp_df$IRS4,tmp_df$lipid,bg=histo_pal[meta_dt$histologic_type[match(WT_samplenames,meta_dt$id)]],pch=21,cex=1.5)
 
@@ -163,8 +174,9 @@ text(0,max(tmp_df$lipid),
        italic(p)~"="~.(format(anova(model2)$'Pr(>F)'[1],scientific = T,digits=3))
      ),adj=c(0,2.5))
 # mtexti(expression(log[10]~TPM~of~IRS4),1,0.5)
-mtexti("IRS4 expression (TPM)",1,0.4)
+mtext("IRS4 expression (TPM)",1,2.0)
 legend("bottomright",legend=names(histo_pal[-c(1,3,7,8)]),pch=21,pt.bg=histo_pal[-c(1,3,7,8)],bty="n",pt.cex=1.5)
+
 dev.off()
 
 # ?predict.lm
@@ -179,5 +191,16 @@ dev.off()
 # the model fit, with a warning since it might not be the intended
 # result.  If the fit was weighted and ‘newdata’ is given, the
 # default is to assume constant prediction variance, with a warning.
+
+
+
+meta_dt$GTF2I_status2 %>% table()
+cor_gexp_with_gsva <- cor(t(all_gs_res),t(geneexpresionmatrix_WT[c("STAR","IRS4","GPR87","C4orf50","ATP10B","NEFL"),]))
+cor_gexp_with_gsva%>% as.data.frame()   %>% rownames_to_column("gs") %>% arrange(desc(IRS4))
+cor_gexp_with_gsva%>% as.data.frame()   %>% rownames_to_column("gs") %>% arrange(desc(STAR))
+
+write_csv(cor_gexp_with_gsva %>% as.data.frame %>% rownames_to_column("gs"),"data/cor_gexp_with_gsva.csv")
+
+
 
 
