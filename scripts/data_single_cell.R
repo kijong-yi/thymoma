@@ -202,6 +202,7 @@ if(!any(c("Ibarra_final","merged")%in%ls())) {
       na.omit() %>%
       as.data.frame() %>%
       column_to_rownames("gene_symbol")
+    dim(Ibarra0)
     Ibarra0[1:3,1:3]
     "Acta2" %in% rownames(Ibarra0)
     Ibarra <- Ibarra0 %>% CreateSeuratObject() %>%
@@ -214,6 +215,8 @@ if(!any(c("Ibarra_final","merged")%in%ls())) {
       RunTSNE()
     Ibarra_meta <- read_tsv("data/singlecell/Ibarra/cellAnnotation.tsv")
     Ibarra_meta %>% head()
+    table(is.na(Ibarra_meta$cellType))
+    
     tmp <- Ibarra_meta$cellType
     names(tmp) <- Ibarra_meta$cell
     Idents(Ibarra) <- tmp[names(Idents(Ibarra))]
@@ -384,3 +387,5 @@ if(!"merged"%in%ls()){
   }
 }
 
+merged <- read_rds("data/singlecell/merged.Rds") # save point
+table(merged$simplified,merged$age)

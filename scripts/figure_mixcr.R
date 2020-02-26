@@ -5,7 +5,7 @@ library(tidyverse)
 meta_dt <- read_tsv('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata/Thymoma_summary_191205_1stSheet.txt')
 tcga_files <- list.files('/home/users/sypark/00_Project/01_thymoma/04_TCGA/08_RNAseq_hg19/mixCR/', pattern = 'ALL.txt$', full.names = T)
 snuh_files <- list.files('/home/users/sypark/00_Project/01_thymoma/01_RNAseq/04_mixCR/', pattern = 'ALL.txt$', full.names = T)
-file_list <- c(tcga_files, snuh_files); rm7(tcga_files, snuh_files)
+file_list <- c(tcga_files, snuh_files); rm(tcga_files, snuh_files)
 gtf2i_pal = c(m="#3C5488FF",w="#E64B35FF",c="#00A087FF")
 
 result_tbl2 <- lapply(1:length(file_list),function(n){
@@ -23,6 +23,10 @@ result_tbl2 <- lapply(1:length(file_list),function(n){
 
 # (meta_dt$id %in% result_tbl2$sampleid) %>% table()
 result_tbl2 <- result_tbl2[match(meta_dt$id,result_tbl2$sampleid),]
+
+write_rds(result_tbl2, "data/mixcr.rds")
+mixcr_meta_dt <- read_rds("~kjyi/Projects/thymus_single_cell/final2/data/mixcr.rds")
+
 
 # table(result_tbl2$sampleid==meta_dt$id)
 m_meta_dt <- cbind(meta_dt, result_tbl2)
@@ -92,6 +96,7 @@ plot(m_meta_dt$`B cell`, m_meta_dt$Bcell_expan_clone_sum,
      cex=as.numeric(Hmisc::cut2(m_meta_dt$Bcell_expan_clone_num,cuts = c(0,100,200,500,1000))),
      pch=21,xlab="",ylab="",
      bg=gtf2i_pal[m_meta_dt$GTF2I_status2] %>% adjustcolor(alpha = 0.6))
+text(m_meta_dt$`B cell`, m_meta_dt$Bcell_expan_clone_sum,m_meta_dt$id)
 mtext("Read counts of expanded clones\nfrom Ig genes assembly (RPM)", side = 2,line = 2)
 mtext("B cell enrichment score", side = 1,line = 2)
 par(new=T)
@@ -104,6 +109,13 @@ text(0.09,0.97,"Number of\nclones")
 # col=ifelse(m_meta_dt$history_myasthenia_gravis == "YES", "red","black"),
 
 dev.off()
+
+
+
+plotly::plot_ly(m_meta_dt, ~`B cell`, ~Bcell_expan_clone_sum,
+             cex=~as.numeric(Hmisc::cut2(m_meta_dt$Bcell_expan_clone_num,cuts = c(0,100,200,500,1000))),
+             pch=21,xlab="",ylab="",
+             bg=~gtf2i_pal[m_meta_dt$GTF2I_status2] %>% adjustcolor(alpha = 0.6))
 
 
 
@@ -127,5 +139,56 @@ text(0.09,0.97,"Number of\nclones")
 
 
 
+plot(log10(m_meta_dt$corrected_IRS4_TPM+1), m_meta_dt$Tcell_expan_clone_sum,
+     cex=as.numeric(Hmisc::cut2(m_meta_dt$Tcell_expan_clone_num,cuts = c(0,2,5,7))),
+     pch=21,xlab="IRS4TPM",ylab="T cell clone expansion",
+     bg=gtf2i_pal[m_meta_dt$GTF2I_status2] %>% adjustcolor(alpha = 0.6))
+plot(log10(m_meta_dt$corrected_IRS4_TPM+1), m_meta_dt$Bcell_expan_clone_sum,
+     cex=as.numeric(Hmisc::cut2(m_meta_dt$Bcell_expan_clone_num,cuts = c(0,100,200,500,1000))),
+     pch=21,xlab="IRS4TPM",ylab="B cell clone expansion",
+     bg=gtf2i_pal[m_meta_dt$GTF2I_status2] %>% adjustcolor(alpha = 0.6),ylim=c(0,20000))
 
 
+
+plot(log10(m_meta_dt$corrected_IRS4_TPM+1), m_meta_dt$`B cell`,
+     cex=as.numeric(Hmisc::cut2(m_meta_dt$Bcell_expan_clone_num,cuts = c(0,100,200,500,1000))),
+     pch=21,xlab="IRS4TPM",ylab="B cell score",
+     bg=gtf2i_pal[m_meta_dt$GTF2I_status2] %>% adjustcolor(alpha = 0.6))
+
+plot(m_meta_dt$final_cellularity, m_meta_dt$`B cell`,
+     cex=as.numeric(Hmisc::cut2(m_meta_dt$Bcell_expan_clone_num,cuts = c(0,100,200,500,1000))),
+     pch=21,xlab="purity",ylab="B cell score",
+     bg=gtf2i_pal[m_meta_dt$GTF2I_status2] %>% adjustcolor(alpha = 0.6))
+
+plot(m_meta_dt$final_cellularity, m_meta_dt$`T cell`,
+     cex=as.numeric(Hmisc::cut2(m_meta_dt$Tcell_expan_clone_num,cuts = c(0,2,5,7))),
+     pch=21,xlab="purity",ylab="B cell score",
+     bg=gtf2i_pal[m_meta_dt$GTF2I_status2] %>% adjustcolor(alpha = 0.6))
+
+m_meta_dt[m_meta_dt$GTF2I_status2=="w",] %>% {
+  summary(lm(`B cell`~final_cellularity+corrected_IRS4_TPM,data=.))
+}
+
+
+# export for review
+plot(m_meta_dt$`B cell`, m_meta_dt$Bcell_expan_clone_sum,
+           cex=as.numeric(Hmisc::cut2(m_meta_dt$Bcell_expan_clone_num,cuts = c(0,100,200,500,1000))),
+           pch=21,xlab="",ylab="",
+           bg=gtf2i_pal[m_meta_dt$GTF2I_status2] %>% adjustcolor(alpha = 0.6))
+text(m_meta_dt$`B cell`, m_meta_dt$Bcell_expan_clone_sum,m_meta_dt$id)
+
+
+library(plotly)
+
+plot_ly(m_meta_dt, x=~`B cell`, y=~Bcell_expan_clone_sum,type="scatter",
+        hovertext=~id, size=2*as.numeric(Hmisc::cut2(m_meta_dt$Bcell_expan_clone_num,cuts = c(0,100,200,500,1000))),
+        color=gtf2i_pal[m_meta_dt$GTF2I_status2]
+     # cex=as.numeric(Hmisc::cut2(m_meta_dt$Bcell_expan_clone_num,cuts = c(0,100,200,500,1000))),
+     # pch=21,xlab="",ylab="",
+     # bg=gtf2i_pal[m_meta_dt$GTF2I_status2] %>% adjustcolor(alpha = 0.6))
+)
+htmlwidgets::saveWidget(p, "test.html")
+m_meta_dt %>%
+  arrange(desc(Bcell_expan_clone_sum)) %>%
+  dplyr::select(id,cohort,histologic_type, GTF2I_status2,Bcell_expan_clone_sum,`B cell`) %>%
+  write_csv("data/review_template.csv")

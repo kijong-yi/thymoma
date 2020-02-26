@@ -13,6 +13,9 @@ histo_pal = c("#631879FF", "#3B4992FF", "#5F559BFF", "#A20056FF", "#BB0021FF", "
 names(histo_pal) = c("A","AB","MN-T","B1","B2","B3","NE","TC")
 
 merged <- read_rds("data/singlecell/merged.Rds")
+gene.use <- read_rds("data/gene.use.Rds")
+load("data/data.scaled.for_comparison.RData")
+
 # merged@reductions$bbknn@assay.used = "RNA"
 
 T0 <- t(thymus_cluster_scaled[thymus_cluster_label %in% c("progenitor", "cTEC", "mTEC", "Tuft", "jTEC"),])
@@ -69,9 +72,14 @@ fast_cor <- function(xt,yt=NULL){
 # HiClimR::fastCor(A, nSplit = 1,optBLAS=T)
 nn <- fast_cor(T0, Tx) %>% apply(2, function(x){names(sort(x,decreasing = T)[1:20])})
 
-if(F){
+if(T){
   nnw <- wcor2(T0, Tx, score1) %>% apply(2, function(x){names(sort(x,decreasing = T)[1:20])})
 }
+colnames(Tx)[1]
+meta_dt$GTF2I_status2[meta_dt$id==colnames(Tx)[1]]
+thymoma_label <- meta_dt$GTF2I_status2[match(colnames(Tx),meta_dt$id)]
+thymoma_histol <- meta_dt$histologic_type[match(colnames(Tx),meta_dt$id)]
+
 
 mycol <- c(w = "#4dd816", m = "#1c54ac", c = "#f64a1d")[thymoma_label]
 mycol <- gtf2i_pal[thymoma_label]
@@ -92,7 +100,7 @@ background_plot <- function(){
   my_color_palette <- c("#F78981", "#CE425A", "#9D0721", "#0BE2A1", "#20A27B", "#00A1FF", "#0B7DC0", "#AB07FF", "#624B92",
                         "#5100FF", "#002EFC", "#1F30BF", "#282C4D", "#1C2362", "#E38900", "#8E766B", "#715757", "#926650",
                         "#BCBCC2", "#84848C", "#74E74C", "#6FA75A", "#102607", "#F766BF")
-  par(mar = c(2,2,2,2),pty="s")
+  # par(mar = c(2,2,2,2),pty="s")
   
   plot(merged@reductions$bbknn@cell.embeddings, 
        pch = 20,
@@ -109,7 +117,8 @@ background_plot <- function(){
 
 # show all points
 
-cairo_pdf("figures/nearestneighborembedding.pdf",height = 10/2.54,width=10/2.54,pointsize = 12*0.7)
+cairo_pdf("figures/nearestneighborembedding.pdf",height = 53.461/25.4,width=53.461/25.4,pointsize = 12*0.7)
+par(mar=rep(0,4),oma=c(0,0,0,0),pty='s')
 # background_plot()
 # rect(1.5,-10,12.5,1,col="#FFFFFF60")
 # box()
@@ -133,11 +142,12 @@ for(i in 1:ncol(nnw)){
 rownames(emb) = colnames(nnw)
 colnames(emb)=c("x","y")
 background_plot()
-box()
+
 rect(1.5,-10,12.5,1,col="#FFFFFF50")
-points(emb, pch = mypch, col = "black", bg=mycol, cex = 2)
-legend("bottomright", legend = c(expression(GTF2I^mut), expression(GTF2I^WT), "Thymic carcinoma"),
-       pch = c(21,23,25), col = "black", pt.bg=gtf2i_pal,pt.cex=1.2)
+box()
+points(emb, pch = mypch, col = "black", bg=mycol, cex = 1.8)
+legend("bottomright", legend = c(expression(GTF2I^mut), expression(GTF2I^WT), "TC"),
+       pch = c(21,23,25), col = "black", pt.bg=gtf2i_pal,pt.cex=1.7,bty="n",horiz = F,cex=0.9)
 dev.off()
 
 if("for marker plotting, case selection" == 1){

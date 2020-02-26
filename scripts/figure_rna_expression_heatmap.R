@@ -1,9 +1,9 @@
-library(tidyverse)
+library(tidyverse, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
 library(ComplexHeatmap, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
 library(ggsci, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
 library(circlize, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
 library(ggrepel, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
-require(GSEABase, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
+# require(GSEABase, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
 library(seriation, lib.loc = "/home/users/kjyi/R/x86_64-redhat-linux-gnu-library/3.6")
 
 # sypark's code --------------------------------------------------------------------------------------------------------
@@ -27,6 +27,13 @@ l10_exp_dt <- left_join(l10_exp_dt, bm_dt, by="gene") %>%
 my_pal = pal_npg("nrc")(10)
 meta_dt$histologic_type %>% unique()
 histo_pal = pal_aaas("default")(10)[c(4,1,7,8,6,2,3,5)]
+# histo_pal = c("#5C2371", "#37468A", "#5A5193", "#981C54", "#B11D23", "#DE1115", "#157D7B", "#90BD32")
+
+histo_pal = pal_aaas("default")(10)[c(4,1,7,8,6,2,3,5)]
+# show_col(histo_pal)
+names(histo_pal) = c("A","AB","MN-T","B1","B2","B3","NE","TC")
+
+
 names(histo_pal) = c("A","AB","MN-T","B1","B2","B3","NE","TC")
 stage_pal=c('#ffffd4','#fed98e','#fe9929','#d95f0e','#993404', 'white')
 names(stage_pal) <- c('I','II','III','IVa','IVb', '0')
@@ -36,7 +43,8 @@ gtf2i_pal = pal_npg("nrc")(10)[c(4,1,3)]
 names(gtf2i_pal) = c('m','w','c')
 exp_pal = colorRamp2(c(-3,0,3), c('#253494',"gray90",'#f03b20'))
 exp_pal2 = colorRamp2(c(-1,0,1), c('#253494',"gray90",'#f03b20'))
-purity_pal = colorRamp2(c(0,0.3,1), c("red","#272822","#999488"))
+# purity_pal = colorRamp2(c(0,0.3,1), c("red","#272822","#999488"))
+purity_pal = colorRamp2(c(0,1), c("white", pal_jama("default", alph = 1)(7)[1]))
 myred = pal_npg("nrc")(10)[8]
 myblue = pal_npg("nrc")(10)[4]
 # unsupervised clustering
@@ -65,50 +73,33 @@ dim(hm_dt)
 
 
 # gene set prep --------------------------------------------------------------------------------------------------------
-# h_list <- getGmt('~kjyi/ref/msigdb/h.all.v6.2.symbols.gmt') %>% geneIds()
+h_list <- GSEABase::getGmt('~kjyi/ref/msigdb/h.all.v6.2.symbols.gmt') %>% GSEABase::geneIds()
 # c2_list <- getGmt('~sypark/00_Project/01_thymoma/10_Final_data/04_GSVA/genesets/c2.cp.v6.2.symbols.gmt') %>% geneIds()
 # c5_list <- getGmt('~kjyi/ref/msigdb/c5.all.v6.2.symbols.gmt') %>% geneIds()
 # all_list <- append(append(h_list,c2_list),c5_list);rm(h_list,c2_list,c5_list)
-
+h_list$HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION
+c("GDF5","GDF1","BMP2","BMP4","LEFTY2","BMP8B","LRG1","SMAD7","GDF6","BMP6","TGFB2") %in% h_list$HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION
+c("ADAMTS20","COL9A3","MMP3","THSD4","COL11A1") %in% h_list$HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION
 
 # names(all_list)[grepl("DEVELOP",names(all_list))&grepl("THYM",names(all_list))]
 # 
 # names(all_list)[grepl("GO",names(all_list))&grepl("_T_CELL",names(all_list))]
 
-all_list <- list("T cell development" = c("CD3D","CD3E","GPAP2","LCK"),
+all_list <- list("T cell development" = c("CD1A","DNTT","CD3D","GPAP2","LCK", "CD8A"),
                  "Metabolic process"=c("CYP2C9","CYP3A5","CYP3A4","STAR","UGT2B7","PPARGC1A","AKR1D1","SRD5A1","WNT4","SLC34A1","ASS1"),
-                 "ECM organization" = c("ADAMTS20","COL9A3","MMP3","THSD4","COL11A1"),
-                 "TGFβ signaling"=c("GDF5","GDF1","BMP2","BMP4","LEFTY2","BMP8B","LRG1","SMAD7","GDF6","BMP6","TGFB2"),
+                 # "ECM organization" = c("ADAMTS20","COL9A3","MMP3","THSD4","COL11A1"),
+                 # "TGFβ signaling"=c("GDF5","GDF1","BMP2","BMP4","LEFTY2","BMP8B","LRG1","SMAD7","GDF6","BMP6","TGFB2"),
+                 "Epithelial-mesenchymal transition"=c("COL11A1","COL1A1", "MMP3","CDH11", "CDH6", "WNT5A"),
                  "Development"=c("TBX1","MYH6","WNT2","HMGA2","WNT5A","BMP4","CX3CR1","IRX2","IRX4","SALL1"),
-                 "TNFα signaling/inflammation"=c("CCL20","CXCL13"))
+                 "TNFα signaling/inflammation"=c("CCL7","CXCL10","IL6","CCL20","CXCL13"))
 selected_names <- names(all_list)
-#
-# selected_names <- c(
-#   # "GO_OXIDATIVE_PHOSPHORYLATION",
-#   # "REACTOME_EXTRACELLULAR_MATRIX_ORGANIZATION",
-#   # "REACTOME_EXTRACELLULAR_MATRIX_ORGANIZATION",
-#   # "GO_THYMUS_DEVELOPMENT",
-#   # "GO_EMBRYONIC_ORGAN_MORPHOGENESIS",
-#   "GO_KERATINIZATION",
-#   "GO_T_CELL_RECEPTOR_SIGNALING_PATHWAY",
-#   # "GO_CHROMATIN_SILENCING", #hist...
-#   # "REACTOME_TCR_SIGNALING", # good
-#   # "GO_T_CELL_DIFFERENTIATION",
-#   # "KEGG_LINOLEIC_ACID_METABOLISM", 
-#   # "KEGG_STEROID_HORMONE_BIOSYNTHESIS", # good??
-#   "KEGG_TGF_BETA_SIGNALING_PATHWAY")#, # good
-# # "HALLMARK_INTERFERON_GAMMA_RESPONSE")#,
-# # "HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION") #good?)
 
-
-
-
-#
 # library(piano)
 # gslist2gsc <- function(gslist){
 #   lapply(names(gslist),function(gsname){cbind(gslist[[gsname]],gsname)}) %>% do.call(rbind,.) %>% loadGSC}
 # gsares <- runGSAhyper(genes=all_names,
 #                       gsc = gslist2gsc(all_list))
+
 if(F){
   gsares$pvalues %>% sort %>% names %>% head(100) %>% paste0('"',.,'"') %>% cat(sep=",\n")
   
@@ -117,11 +108,6 @@ if(F){
   structure(lapply(x,function(x){table(all_list[[x]]%in%rownames(hm_dt))}),names=x)
 }
 
-# o1 = seriate(dist(hm_dt), method = "TSP") # about genes
-o1p = seriate(as.dist(1-cor(t(hm_dt))), method = "TSP") # about genes
-
-# o1pgw = seriate(as.dist(1-cor(t(hm_dt))), method = "GW") # about genes
-# hm_dt <- hm_dt[nrow(hm_dt):1,]
 
 
 length(selected_names)
@@ -141,11 +127,17 @@ table(all_color)
 
 
 o1pgw = hclust(as.dist(1-cor(t(hm_dt)))) # about genes
-
 o2pgw = seriate(as.dist(1-cor(hm_dt)), method = "GW")
+summary(o1pgw)
+cutree(o1pgw,4) %>% {names(.)[.==4]} %>% {c("CD3E", "CD8A", "CD1A") %in% .}
+cutree(o1pgw,4) %>% {names(.)[.==2]} %>% {table(h_list$HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION %in% .)}
+cutree(o1pgw,4) %>% {names(.)[.==2]} %>% {.[.%in%h_list$HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION]}
+cutree(o1pgw,4) %>% {names(.)[.==1]} %>% {.[. %in% h_list$HALLMARK_TNFA_SIGNALING_VIA_NFKB]}
+cutree(o1pgw,4) %>% {names(.)[.==1]} %>% {.[. %in% h_list$HALLMARK_INTERFERON_GAMMA_RESPONSE]}
+ 
 
-# o2 = seriate(dist(t(hm_dt)), method = "TSP") # about samples 
-# o2p = seriate(as.dist(1-cor(hm_dt)), method = "TSP")
+o1pgw$labels[o1pgw$order]
+
 
 top_anno <- HeatmapAnnotation("Group"= hm_annot_dt$GTF2I_status2,
                               "Histologic type"= hm_annot_dt$histologic_type,
@@ -165,13 +157,14 @@ top_anno <- HeatmapAnnotation("Group"= hm_annot_dt$GTF2I_status2,
                                              "Type B1 thymoma",
                                              "Type B2 thymoma",
                                              "Type B3 thymoma",
-                                             "Neuroendocrine carcinoma",
-                                             "Thymic carcinoma (Squamous cell carcinoma,Undifferentiated ca)")
+                                             "Thymic NEC",
+                                             # "Thymic carcinoma (Squamous cell carcinoma,Undifferentiated ca)")
+                                             "Thymic carcinoma")
                                 ),
                                 "Group" = list(
                                   title = "Group",
                                   at = c("m", "w","c"),
-                                  labels = c("GTF2I-mutant", "Wild-type","Thymic carcinoma"))))
+                                  labels = c("GTF2I-mutant", "GTF2I wild-type","Thymic carcinoma"))))
 ha = rowAnnotation(foo = anno_mark(at = which(all_color != "black"),
                                    labels = all_names[all_color != "black"], 
                                    lines_gp = gpar(col=all_color[which(all_color != "black")]),
@@ -185,9 +178,23 @@ lgd2 = Legend(col_fun = exp_pal, title = "Normalized gene expression")
 
 lgd12=packLegend(lgd,lgd2)
 draw(lgd12)
-
+get_order(o1pgw)
+get_order(o1pgw)
+get_order(o1pgw)
+plot(o1pgw)
+table(cutree(o1pgw,4)) %>% cumsum
+table(get_order(o1pgw)[c(which(cutree(o1pgw,4)==1),
+                     which(cutree(o1pgw,4)==4),
+                     which(cutree(o1pgw,4)==2),
+                     which(cutree(o1pgw,4)==3))] ==get_order(o1pgw))
+class(o1pgw)
 h1 <- Heatmap(hm_dt,
-              row_order = get_order(o1p),width = unit(9,"cm"),height = unit(11,"cm"),
+              # row_order = get_order(o1pgw)[c(1:270,2166:2500,271:1553,1554:2165)],
+              # row_order = get_order(o1pgw)[c(which(cutree(o1pgw,4)==1),
+              #                                which(cutree(o1pgw,4)==4),
+              #                                which(cutree(o1pgw,4)==2),
+              #                                which(cutree(o1pgw,4)==3))],
+              width = unit(9,"cm"),height = unit(11,"cm"),
               show_row_dend = F,
               show_column_names = F,
               cluster_columns = as.dendrogram(o2pgw[[1]]),
@@ -195,15 +202,15 @@ h1 <- Heatmap(hm_dt,
               top_annotation = top_anno, col= exp_pal, show_row_names = F,
               right_annotation = ha,show_heatmap_legend = F,
               row_split = 4,
-              left_annotation = rowAnnotation( width = unit(4.5, "mm"),d=anno_block(
+              left_annotation = rowAnnotation(width = unit(4.5, "mm"),d=anno_block(
                 gp = gpar(fill = c("#FF7F00","#008280","#EE0000","#377EB8")),
-                labels = c("group1", "group2", "group3","group4"),
+                labels = c("cluster1", "cluster2", "cluster3","cluster4"),
                 labels_gp = gpar(col = "white", fontsize = 10)
               )),
               row_title_gp = gpar(col="#00000000"),
               row_gap = unit(0.5, "mm"))
 
-# draw(lgd12)
+draw(h1)
 draw(h1, annotation_legend_list = lgd12)
 
 cairo_pdf("figures/heatmap_rna_expression.1.pdf",height = 15/2.54,width=25/2.54,pointsize = 12*0.7)

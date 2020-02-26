@@ -2,20 +2,20 @@ library(tidyverse)
 library(GSVA)
 source("~kjyi/Projects/thymus_single_cell/final2/scripts/biplotfun.R")
 
-color.bar <- function(lut, min, max=-min, nticks=11, ticks=seq(min, max, len=nticks), title='') {
+color.bar <- function(lut, min, max=-min, nticks=11, ticks=seq(min, max, len=nticks), title='',thickness=0.1,bordercol="black") {
   scale = (length(lut)-1)/(max-min)
   # dev.new(width=1.75, height=5)
-  plot(c(min,max),c(0,10), type='n', bty='n', xaxt='n', xlab='', yaxt='n', ylab='', main=title,yaxs='i')
-  axis(1, las=1)
+  plot(c(min,max),c(0,1), type='n', bty='n', xaxt='n', xlab='', yaxt='n', ylab='', main=title,yaxs='i')
+  # axis(1, las=1)
   for (i in 1:(length(lut)-1)) {
     y = (i-1)/scale + min
-    rect(y,0,y+1/scale,2, col=lut[i], border=NA)
+    rect(y,0,y+1/scale,thickness, col=lut[i], border=NA)
   }
-  rect(min,0,max,2)
-  mtext(expression(log[10](CPM~"x"~100)),side = 1,line=2.5)
+  rect(min,0,max,thickness,bg=bordercol)
+  # mtext(expression(log[10](CPM~"x"~100)),side = 1,line=2.5)
 }
 
-color.bar2 <- function(lut, min, max=-min,ylim=c(min,max), nticks=11, ticks=seq(min, max, len=nticks), title='', thickness=c(0,2)) {
+color.bar2 <- function(lut, min, max=-min, ylim=c(min,max), nticks=11, ticks=seq(min, max, len=nticks), title='', thickness=c(0,2)) {
   scale = (length(lut)-1)/(max-min)
   # dev.new(width=1.75, height=5)
   plot(c(0,10),c(min,max), type='n', bty='n', xaxt='n', xlab='', yaxt='n', ylab='', main=title,xaxs='i',ylim=ylim)
@@ -52,121 +52,408 @@ markers <- list("B cell" = c("BLK","CD19","FCRL2","MS4A1","TNFRSF17","TCL1A","SP
                 "naive" = c("ADTRP","AK5","ATP10A","C1orf162","EPPK1","GIMAP5","GIMAP8","IL6R","INPP4B","LDLRAP1","NOG","PASK","PCED1B","PLEKHA1","RAB30","RPS4Y1","SHISAL2A","TAGAP","UPP1","VSIG1"),
                 "Late thymocytes" = c("CD1A","CD1B","DNTT"))
 markers[["Thymopoiesis"]] <- c(markers[["proT"]],markers[["Doublepolar"]])
+for(i in 1:length(markers)){
+  cat(names(markers)[i])
+  cat("::")
+  cat(paste(markers[[i]],collapse=", "))
+  cat("\n")
+}
 # markers[["Cytotoxic/exhausted"]] <- c(markers[["Exhausted"]],markers[["Cytotoxic"]])
 # markers[["TNFa signaling"]] <- c("ABCA1","AC129492.1","ACKR3","AREG","ATF3","ATP2B1","B4GALT1","B4GALT5","BCL2A1","BCL3","BCL6","BHLHE40","BIRC2","BIRC3","BMP2","BTG1","BTG2","BTG3","CCL2","CCL20","CCL4","CCL5","CCN1","CCND1","CCNL1","CCRL2","CD44","CD69","CD80","CD83","CDKN1A","CEBPB","CEBPD","CFLAR","CLCF1","CSF1","CSF2","CXCL1","CXCL10","CXCL11","CXCL2","CXCL3","CXCL6","DDX58","DENND5A","DNAJB4","DRAM1","DUSP1","DUSP2","DUSP4","DUSP5","EDN1","EFNA1","EGR1","EGR2","EGR3","EHD1","EIF1","ETS2","F2RL1","F3","FJX1","FOS","FOSB","FOSL1","FOSL2","FUT4","G0S2","GADD45A","GADD45B","GCH1","GEM","GFPT2","GPR183","HBEGF","HES1","ICAM1","ICOSLG","ID2","IER2","IER3","IER5","IFIH1","IFIT2","IFNGR2","IL12B","IL15RA","IL18","IL1A","IL1B","IL23A","IL6","IL6ST","IL7R","INHBA","IRF1","IRS2","JAG1","JUN","JUNB","KDM6B","KLF10","KLF2","KLF4","KLF6","KLF9","KYNU","LAMB3","LDLR","LIF","LITAF","MAFF","MAP2K3","MAP3K8","MARCKS","MCL1","MSC","MXD1","MYC","NAMPT","NFAT5","NFE2L2","NFIL3","NFKB1","NFKB2","NFKBIA","NFKBIE","NINJ1","NR4A1","NR4A2","NR4A3","OLR1","PANX1","PDE4B","PDLIM5","PFKFB3","PHLDA1","PHLDA2","PLAU","PLAUR","PLEK","PLK2","PLPP3","PMEPA1","PNRC1","PPP1R15A","PTGER4","PTGS2","PTPRE","PTX3","RCAN1","REL","RELA","RELB","RHOB","RIPK2","RNF19B","SAT1","SDC4","SERPINB2","SERPINB8","SERPINE1","SGK1","SIK1","SLC16A6","SLC2A3","SLC2A6","SMAD3","SNN","SOCS3","SOD2","SPHK1","SPSB1","SQSTM1","STAT5A","TANK","TAP1","TGIF1","TIPARP","TLR2","TNC","TNF","TNFAIP2","TNFAIP3","TNFAIP6","TNFAIP8","TNFRSF9","TNFSF9","TNIP1","TNIP2","TRAF1","TRIB1","TRIP10","TSC22D1","TUBB2A","VEGFA","YRDC","ZBTB10","ZC3H12A","ZFP36")
 # markers[["TNFa signaling"]] <- markers[["TNFa signaling"]][markers[["TNFa signaling"]] %in% rownames(l10_exp_dt2)]
 # markers[["Neutrophil/macrophage"]] <- c(markers[["Neutrophil"]],markers[["Macrophage"]])
 
-
-
 l10_exp_dt2 <- exp_dt %>% mutate_at(vars(-gene), list(~log10(.+0.01))) %>% column_to_rownames("gene")
 exp_dt2 <- exp_dt %>% column_to_rownames("gene")
-df22 <- gsva(as.matrix(l10_exp_dt2), markers[c("Thymopoiesis","Cytotoxic","Exhausted", "Neutrophil","NK cell", "Macrophage","Dendritic cell", "B cell")], method = "ssgsea")
-
-write_rds(df22,"~kjyi/Projects/thymus_single_cell/final2/data/immune_ssgsea_all.Rds")
+if(F){
+  df22 <- gsva(as.matrix(l10_exp_dt2), markers[c("Thymopoiesis","Cytotoxic","Exhausted", "Neutrophil","NK cell", "Macrophage","Dendritic cell", "B cell")], method = "ssgsea")
+  write_rds(df22,"~kjyi/Projects/thymus_single_cell/final2/data/immune_ssgsea_all.Rds")
+}else{
+  df22<-read_rds("~kjyi/Projects/thymus_single_cell/final2/data/immune_ssgsea_all.Rds")
+}
+dim(df22)
 
 l10_exp_dt2 <- l10_exp_dt2[,!colnames(l10_exp_dt2) %in% c("TCGA-5U-AB0D", "SNU_09_C")]
 exp_dt2 <- exp_dt2[,!colnames(exp_dt2) %in% c("TCGA-5U-AB0D", "SNU_09_C")]
 # l10_exp_dt3 <- l10_exp_dt2[,meta_dt$id[meta_dt$final_cellularity <= 0.5]]
 # df <- gsva(as.matrix(l10_exp_dt3), markers[c("Thymopoiesis","Cytotoxic","Exhausted", "Neutrophil","NK cell", "Macrophage","Dendritic cell", "B cell")], method = "ssgsea")
-df2 <- gsva(as.matrix(l10_exp_dt2), markers[c("Thymopoiesis","Cytotoxic","Exhausted", "Neutrophil","NK cell", "Macrophage","Dendritic cell", "B cell")], method = "ssgsea")
-
-write_rds(df2,"~kjyi/Projects/thymus_single_cell/final2/data/immune_ssgsea.Rds")
+if(F){
+  df2 <- gsva(as.matrix(l10_exp_dt2), markers[c("Thymopoiesis","Cytotoxic","Exhausted", "Neutrophil","NK cell", "Macrophage","Dendritic cell", "B cell")], method = "ssgsea")
+  write_rds(df2,"~kjyi/Projects/thymus_single_cell/final2/data/immune_ssgsea.Rds")
+}else{
+  df2 <- read_rds("~kjyi/Projects/thymus_single_cell/final2/data/immune_ssgsea.Rds")
+}
 
 IGH_gene_ids  <- rownames(l10_exp_dt2)[grep("^IGH",rownames(l10_exp_dt2))]
 IGH_sum <- colSums(exp_dt2[IGH_gene_ids,]) %>% {log10(.+0.01)}
-
-
 pca2 <- prcomp(t(df2))
 s2 <- summary(pca2)
 
 
-# 912&height=496
-# 496/72
-cairo_pdf("~kjyi/Projects/thymus_single_cell/final2/figures/pca_immune_score.pdf",height = 10/2.54,width=19/2.54,pointsize = 12*0.7)
+"------------------------------------------------------------------------------"
+"                                                                              "
+"                                  Immune PCA                                  "
+"                                                                              "
+"------------------------------------------------------------------------------"
+cairo_pdf("~kjyi/Projects/thymus_single_cell/final2/figures/pca_immune_score.pdf",
+          width=(200)/25.4,height = 200/3/25.4,pointsize = 12*0.7)
+# s <- svglite::svgstring(width=(200)/25.4,height = 200/3/25.4,pointsize = 12*0.7)
+layout(matrix(c(1,1,2,3,4,5,
+                1,1,6,7,8,9),byrow=T,ncol=6), widths=c(1,1,1,1,1,1),heights=c(1,1))
 
-layout(matrix(c(1,1,2,3,
-                1,1,4,5),byrow=T,ncol=4), widths=c(1,1,1,1),heights=c(1,1))
-par(mar=c(0,0,0,2),oma=c(5,5,1,1))
-biplot.prcomp2(pca2, bg=gtf2i_pal[meta_dt$GTF2I_status2[match(colnames(l10_exp_dt2),meta_dt$id)]],pt.cex=2.5,
-               xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),axis.text.cex = 1.5,
+par(mar=c(3.5,3,0.5,0.5),oma=c(0,0,0,0))
+
+biplot.prcomp2(pca2, bg=gtf2i_pal[meta_dt$GTF2I_status2[match(colnames(l10_exp_dt2),meta_dt$id)]],pt.cex=2,
+               xlim=c(-0.37,0.25),ylim=c(-0.2,0.25),axis.text.cex = 1.5,arrow.len=0.05,
                xlab="",ylab="",
-               pch=21)
-mtext(paste("PCA 1 (", round(s2$importance[2]*100, 1), "%)", sep = ""),side=1,line=2.5)
-mtext(paste("PCA 2 (", round(s2$importance[5]*100, 1), "%)", sep = ""),side=2,line=2.5)
+               pch=21,lwd=0.8,
+               textaxisbg="white",textaxisborder="black")
+mtext(paste("PCA 1 (", round(s2$importance[2,1]*100, 1), "%)", sep = ""),side=1,line=2,cex = 0.8)
+mtext(paste("PCA 2 (", round(s2$importance[2,2]*100, 1), "%)", sep = ""),side=2,line=2,cex = 0.8)
 abline(v=0,h=0,lty=2,col="grey40")
 
+# ----------------------------------------------------------------------------
+"1. CD1A"
+# par(mfrow=c(2,4))
+par(mar=c(2,.5,.5,.5))
+biplot.prcomp2(pca2, 
+               bg=circlize::colorRamp2(seq(-1,log10(300+0.01),length.out=6),c("#E9E9E9","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404")
+               )(l10_exp_dt2["CD1A",]),
+               col="black", arrow.len=0.05,lwd=0.6,pt.cex=1.3,bty="n",xaxt='n',yaxt='n',xlab='',ylab='',
+               textaxis=F,xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),pch=21,draw.box=F);
+mtext("CD1A",cex=0.8,font=2, side=3,line=-1,adj=c(0.03))
+par(new=T,mar=c(2,3,3,3))
+color.bar(lut = colorRampPalette(c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404"))(100),
+          min=0,max = log10(300+0.01),thickness = 0.05,bordercol="#00000000")
+axis(side=1,at = log10(c(0.99,10,50,300)+0.01),labels = c(0,10,50,300), las=1)
+# ----------------------------------------------------------------------------
+"2. TDT, PSMB11, LGALS"
+par(mar=c(2,.5,.5,.5))
+biplot.prcomp2(pca2, 
+               bg=circlize::colorRamp2(seq(-1,log10(950+0.01),length.out=6),c("#E9E9E9","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404")
+               )(l10_exp_dt2["DNTT",]),
+               col="black", arrow.len=0.05,lwd=0.6,pt.cex=1.3,bty="n",xaxt='n',yaxt='n',xlab='',ylab='',
+               textaxis=F,xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),pch=21,draw.box=F);
+mtext("DNTT (TdT)",cex=0.8,font=2, side=3,line=-1,adj=c(0.03))
+par(new=T,mar=c(2,3,3,3))
+color.bar(lut = colorRampPalette(c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404"))(100),
+          min=0,max = log10(950+0.01),thickness = 0.05,bordercol="#00000000")
+axis(side=1,at = log10(c(0.99,10,100,950)+0.01),labels = c(0,10,100,950), las=1)
+
+# ----------------------------------------------------------------------------
+"3. CTLA4"
+par(mar=c(2,.5,.5,.5))
+biplot.prcomp2(pca2, 
+               bg=circlize::colorRamp2(seq(-0.5,log10(20+.01),length.out=6),c("#E9E9E9","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404")
+               )(l10_exp_dt2["CTLA4",]),
+               col="black", arrow.len=0.05,lwd=0.6,pt.cex=1.3,bty="n",xaxt='n',yaxt='n',xlab='',ylab='',
+               textaxis=F,xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),pch=21,draw.box=F);
+mtext("CTLA4",cex=0.8,font=2, side=3,line=-1,adj=c(0.03))
+par(new=T,mar=c(2,3,3,3))
+color.bar(lut = colorRampPalette(c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404"))(100),
+          min=0,max = log10(20+.01),thickness = 0.05,bordercol="#00000000")
+axis(side=1,at = log10(c(0.99,5,20)+0.01),labels = c(0,5,20), las=1)
+
+
+# ----------------------------------------------------------------------------
+'4. LAG3 TIGIT PD1 TIM3 c("LAG3","TIGIT","HAVCR2","CTLA4")'
+par(mar=c(2,.5,.5,.5))
+biplot.prcomp2(pca2, 
+               bg=circlize::colorRamp2(seq(-0.72,log10(43.01),length.out=6),c("#E9E9E9","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404")
+               )(l10_exp_dt2["LAG3",]),
+               col="black", arrow.len=0.05,lwd=0.6,pt.cex=1.3,bty="n",xaxt='n',yaxt='n',xlab='',ylab='',
+               textaxis=F,xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),pch=21,draw.box=F);
+mtext("LAG3",cex=0.8,font=2, side=3,line=-1,adj=c(0.03))
+par(new=T,mar=c(2,3,3,3))
+color.bar(lut = colorRampPalette(c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404"))(100),
+          min=0,max = log10(43.01),thickness = 0.05,bordercol="#00000000")
+axis(side=1,at = log10(c(0.99,5,15,43)+0.01),labels = c(0,5,15,43), las=1)
+# ----------------------------------------------------------------------------
+'5. Acute inflammation IFNG'
+par(mar=c(2,.5,.5,.5))
+biplot.prcomp2(pca2, 
+               bg=circlize::colorRamp2(seq(0,6,length.out=6),c("#E9E9E9","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404")
+               )(exp_dt2["IFNG",]),
+               col="black", arrow.len=0.05,lwd=0.6,pt.cex=1.3,bty="n",xaxt='n',yaxt='n',xlab='',ylab='',
+               textaxis=F,xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),pch=21,draw.box=F);
+mtext("IFNG",cex=0.8,font=2, side=3,line=-1,adj=c(0.03))
+par(new=T,mar=c(2,3,3,3))
+color.bar(lut = colorRampPalette(c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404"))(100),
+          min=0,max = 6,thickness = 0.05,bordercol="#00000000")
+axis(side=1,at = seq(0,6,length.out=4),labels = seq(0,6,length.out=4), las=1)
+# "Neutrophil" = c("FPR1","SIGLEC5","CSF3R","FCAR","FCGR3B"),
+# "NK cell" = c("KIR2DL3","KIR3DL1","KIR3DL2","XCL1","XCL2","NCR1"),
+# ----------------------------------------------------------------------------
+'6. Acute inflammation2 TNFa'
+par(mar=c(2,.5,.5,.5))
+biplot.prcomp2(pca2, 
+               bg=circlize::colorRamp2(seq(-2,log10(1000),length.out=6),c("#E9E9E9","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404")
+               )(l10_exp_dt2["IL6",]),
+               col="black", arrow.len=0.05,lwd=0.6,pt.cex=1.3,bty="n",xaxt='n',yaxt='n',xlab='',ylab='',
+               textaxis=F,xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),pch=21,draw.box=F);
+mtext("IL6",cex=0.8,font=2, side=3,line=-1,adj=c(0.03))
+par(new=T,mar=c(2,3,3,3))
+color.bar(lut = colorRampPalette(c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404"))(100),
+          min=0,max =log10(1000.01),thickness = 0.05,bordercol="#00000000")
+axis(side=1,at = log10(c(0.99,10,100,1000)+0.01),labels = c(0,10,100,1000), las=1)
+
+# ----------------------------------------------------------------------------
+'7. IGH sum'
+par(mar=c(2,.5,.5,.5))
+biplot.prcomp2(pca2, 
+               bg=circlize::colorRamp2(seq(1,4,length.out=6),c("#E9E9E9","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404")
+               )(IGH_sum),
+               col="black", arrow.len=0.05,lwd=0.6,pt.cex=1.3,bty="n",xaxt='n',yaxt='n',xlab='',ylab='',
+               textaxis=F,xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),pch=21,draw.box=F);
+mtext("IGHs",cex=0.8,font=2, side=3,line=-1,adj=c(0.03))
+par(new=T,mar=c(2,3,3,3))
+color.bar(lut = colorRampPalette(c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404"))(100),
+          min=1,max = 4,thickness = 0.05,bordercol="#00000000")
+axis(side=1,at = log10(c(10,100,1000,10000)+0.01),labels = c(10,expression(10^2),expression(10^3),expression(10^4)), las=1)
+# ----------------------------------------------------------------------------
+'CD20'
+par(mar=c(2,.5,.5,.5))
+biplot.prcomp2(pca2, 
+               bg=circlize::colorRamp2(seq(0,log10(230.01),length.out=6),c("#E9E9E9","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404")
+               )(l10_exp_dt2["MS4A1",]),
+               col="black", arrow.len=0.05,lwd=0.6,pt.cex=1.3,bty="n",xaxt='n',yaxt='n',xlab='',ylab='',
+               textaxis=F,xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),pch=21,draw.box=F);
+mtext("MS4A1 (CD20)",cex=0.8,font=2, side=3,line=-1,adj=c(0.03))
+par(new=T,mar=c(2,3,3,3))
+color.bar(lut = colorRampPalette(c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404"))(100),
+          min=0,max = log10(230.01),thickness = 0.05,bordercol="#00000000")
+axis(side=1,at = log10(c(0.99,10,50,230)+0.01),labels = c(0,10,50,230), las=1)
+# ----------------------------------------------------------------------------
+dev.off()
+htmltools::browsable(htmltools::HTML(s()))
+
+
+
+"------------------------------------------------------------------------------"
+"                                                                              "
+"                     purity, thymocyte, exhaustion                            "
+"                                                                              "
+"------------------------------------------------------------------------------"
+
+cairo_pdf("~kjyi/Projects/thymus_single_cell/final2/figures/topline_immune_score.pdf",
+          width=(200)/25.4,height = 45/25.4,pointsize = 12*0.7*0.9)
+# s <- svglite::svgstring(width=(200)/25.4,height = 45/25.4,pointsize = 12*0.7*0.9)
+
+layout(matrix(c(1,2,3,4,5),byrow=T,ncol=5), widths=c(1.2,1.6,1,1,1),heights=c(1,1))
+par(mar=c(2.5,2.5,1,1),oma=c(0.7,0.7,0,0))
+
+meta_dt <- meta_dt[!meta_dt$histologic_type %in% c("NE","MN-T"),]
+
+
+"Scatter: Thymopoiesis score ~ purity"
+plot(1-meta_dt$final_cellularity,
+     df22["Thymopoiesis",match(meta_dt$id,colnames(df22))],
+     xlab="",ylab="", pch=21,
+     bg=gtf2i_pal[meta_dt$GTF2I_status2],cex=2,lwd=0.6,yaxt='n',
+     bty="L")
+axis(2,cex.axis=0.9,padj=0.5)
+mtext(text = "Thymopoiesis score", side=2,line=2,cex=0.65)
+mtext(text = "1-purity", side=1,line=2,cex=0.65)
+
+
+"Linear model coefficient plot"
+fit <- lm((1-meta_dt$final_cellularity) ~ 
+          df22["NK cell",match(meta_dt$id,colnames(df22))] +
+          df22["Neutrophil",match(meta_dt$id,colnames(df22))] +
+          df22["Dendritic cell",match(meta_dt$id,colnames(df22))] +
+          df22["Cytotoxic",match(meta_dt$id,colnames(df22))] +  
+          df22["Exhausted",match(meta_dt$id,colnames(df22))] +
+          df22["Macrophage",match(meta_dt$id,colnames(df22))] +
+          df22["B cell",match(meta_dt$id,colnames(df22))] +
+          df22["Thymopoiesis",match(meta_dt$id,colnames(df22))])
+summary(fit)
+y = coef(fit)
+x = seq_along(y)
+ci = confint(fit)
+xlim = range(x) + c(-0.5,0.2)
+ylim = range(ci)
+ylim = ylim + 0.1*c(-1,+1)*diff(ylim) # extend it a little
+ylab = bquote(hat(beta))
+xlab = "coefficient"
+ss <-summary(fit)
+sss<- ifelse(ss$coefficients[,4] < 0.001, "***", ifelse(ss$coefficients[,4] < 0.05,"*",""))
+par(mar=c(4,8,3,4))
+plot(x=y, y=x, pch=16, xlim=ylim, ylim=xlim, xlab=ylab, ylab="", yaxt="n", bty="n", main = "Estimated coefficients for 1-puirity",main.cex=1)
+axis(2, at=x, labels=c(
+  "(Intercept)",
+  "NK cell score",
+  "Neutrophil score",
+  "Dendritic cell score",
+  "Cytotoxic score",
+  "Exhausted score",
+  "Macrophage score",
+  "B cell score",
+  "Thymopoiesis score"
+  ), tick=FALSE,las=1)
+axis(4, at=x, labels=sss, tick=FALSE,las=2)
+abline(v=0, lty=3)
+arrows(ci[,1],x,ci[,2],x, code=3, angle=90, length=0.05)
+
+"Boxplot: Thymopoiesis ~ group"
+par(mar=c(2.5,2.5,1,1),bty="L")
+boxplot(df22["Thymopoiesis",match(meta_dt$id,colnames(df22))]~meta_dt$GTF2I_status2,
+        xlab="",ylab="",xaxt='n',yaxt='n',
+        col=gtf2i_pal[levels(factor(meta_dt$GTF2I_status2))],cex.axis=0.8)
+axis(2,cex.axis=0.9,padj=0.5)
+# mapply(axis, side = 1, at = 1:3, labels = levels(factor(meta_dt$GTF2I_status2)),cex.axis=0.9)
+mtext(text = "Thymopoiesis score", side = 2, line=2,cex=0.65)
+
+"Boxplot: Cytotoxic ~ group"
+boxplot(df22["Cytotoxic",match(meta_dt$id,colnames(df22))]~meta_dt$GTF2I_status2,
+        xlab="",ylab="",xaxt='n',yaxt='n',
+        col=gtf2i_pal[levels(factor(meta_dt$GTF2I_status2))])
+axis(2,cex.axis=0.9,padj=0.5)
+# mapply(axis, side = 1, at = 1:3, labels = levels(factor(meta_dt$GTF2I_status2)),cex.axis=0.9)
+mtext(text = "Cytotoxic score", side = 2, line=2,cex=0.65)
+
+"Boxplot: B cell ~ group"
+boxplot(df22["B cell",match(meta_dt$id,colnames(df22))]~meta_dt$GTF2I_status2,
+        xlab="",ylab="",xaxt='n',yaxt='n',
+        col=gtf2i_pal[levels(factor(meta_dt$GTF2I_status2))],cex.axis=0.8)
+axis(2,cex.axis=0.9,padj=0.5)
+# mapply(axis, side = 1, at = 1:3, labels = levels(factor(meta_dt$GTF2I_status2)),cex.axis=0.9)
+mtext(text = "B cell score", side = 2, line=2,cex=0.65)
+
+
+# wilcox.test(df22["B cell",match(meta_dt$id,colnames(df22))][meta_dt$GTF2I_status2=="c"],
+#        df22["B cell",match(meta_dt$id,colnames(df22))][meta_dt$GTF2I_status2=="m"])
+# wilcox.test(df22["B cell",match(meta_dt$id,colnames(df22))][meta_dt$GTF2I_status2=="w"],
+#        df22["B cell",match(meta_dt$id,colnames(df22))][meta_dt$GTF2I_status2=="m"])
 # 
-par(mar=c(0,0,0,0))
-biplot.prcomp2(pca2, bg=circlize::colorRamp2(seq(0,2.5,length.out=6),
-                                             c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404")
-)(l10_exp_dt2["CD1A",]),pt.cex=1.7,bty='n',xaxt='n',yaxt='n',xlab='',ylab='',textaxis=F,
-xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),
-pch=21);mtext("CD1A",cex=1,font=2, side=3,line=-2,adj=c(0.03))
-
-par(new=T,pty='m',mar=c(0,3,0,0))
-color.bar2(colorRampPalette(c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404"))(100),0,2.5,ylim=c(0,2.5*2.5),thickness=c(0,0.5))
-axis(side=2,at = log10(c(0.99,10,100,300)+0.01),labels = c(0,10,100,300), las=1)
-par(mar=c(0,0,0,0))
-
-
-biplot.prcomp2(pca2, bg=circlize::colorRamp2(seq(0,6,length.out=6),
-                                             c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404")
-)(exp_dt2["IFNG",]),pt.cex=1.7,bty='n',xaxt='n',yaxt='n',xlab='',ylab='',textaxis=F,
-xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),
-pch=21);mtext("IFNG",cex=1,font=2, side=3,line=-2,adj=c(0.03))
-
-par(new=T,pty='m',mar=c(0,3,0,0))
-color.bar2(colorRampPalette(c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404"))(100),0,6,ylim=c(0,6*2.5),thickness=c(0,0.5))
-axis(side=2,at = seq(0,6,length.out=4),labels = seq(0,6,length.out=4), las=1)
-par(mar=c(0,0,0,0))
+# 
+# wilcox.test(df22["Cytotoxic",match(meta_dt$id,colnames(df22))][meta_dt$GTF2I_status2=="c"],
+#        df22["Cytotoxic",match(meta_dt$id,colnames(df22))][meta_dt$GTF2I_status2!="c"])
+# wilcox.test(df22["Exhausted",match(meta_dt$id,colnames(df22))][meta_dt$GTF2I_status2=="c"],
+#        df22["Exhausted",match(meta_dt$id,colnames(df22))][meta_dt$GTF2I_status2!="c"])
+dev.off()
+htmltools::browsable(htmltools::HTML(s()))
 
 
 
+"------------------------------------------------------------------------------"
+"                                                                              "
+"                     purity, thymocyte, exhaustion ~ histology                "
+"                                                                              "
+"------------------------------------------------------------------------------"
 
-biplot.prcomp2(pca2, bg=circlize::colorRamp2(seq(-0.5,1.3,length.out=6),
-                                             c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404")
-)(l10_exp_dt2["CTLA4",]),pt.cex=1.7,bty='n',xaxt='n',yaxt='n',xlab='',ylab='',textaxis=F,
-xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),
-pch=21);mtext("CTLA4",cex=1,font=2, side=3,line=-2,adj=c(0.03))
-par(new=T,pty='m',mar=c(0,3,0,0))
-color.bar2(colorRampPalette(c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404"))(100),0,1.3,ylim=c(0,1.3*2.5),thickness=c(0,0.5))
-axis(side=2,at = log10(c(0.99,5,10,20)+0.01),labels = c(0,5,10,20), las=1)
-par(mar=c(0,0,0,0))
+cairo_pdf("~kjyi/Projects/thymus_single_cell/final2/figures/supple_immunescore_histology.pdf",
+          width=(180)/25.4,height = 50/25.4,pointsize = 12*0.7*0.9)
+# s <- svglite::svgstring(width=(200)/25.4,height = 45/25.4,pointsize = 12*0.7*0.9)
+par(mfrow=c(1,4), bty='L')
+# layout(matrix(c(1,2,3,4,5),byrow=T,ncol=5), widths=c(1.2,1.6,1,1,1),heights=c(1,1))
+par(mar=c(2.5,2.5,1,1),oma=c(0.7,0.7,0,0))
 
 
-biplot.prcomp2(pca2, bg=circlize::colorRamp2(seq(1,4,length.out=6),
-                                             c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404")
-)(IGH_sum),pt.cex=1.7,bty='n',xaxt='n',yaxt='n',xlab='',ylab='',textaxis=F,
-xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),
-pch=21);mtext("IGH (sum)",cex=c(1),font=2, side=3,line=-2,adj=c(0.03))
-par(new=T,pty='m',mar=c(0,3,0,0))
-color.bar2(colorRampPalette(c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404"))(100),1,4,ylim=c(1,4*2.5),thickness=c(0,0.5))
-axis(side=2,at = log10(c(10,100,1000,10000)+0.01),labels = c(10,expression(10^2),expression(10^3),expression(10^4)), las=1)
-par(mar=c(0,0,0,0))
+"Boxplot: Thymopoiesis cell ~ histology"
+boxplot(df22["Thymopoiesis",match(meta_dt$id,colnames(df22))]~meta_dt$histologic_type,
+        xlab="",ylab="",xaxt='n',yaxt='n',
+        col=histo_pal[levels(factor(meta_dt$histologic_type))],cex.axis=0.8)
+axis(2,cex.axis=0.9,padj=0.5)
+mapply(axis, side = 1, at = 1:6, labels = levels(factor(meta_dt$histologic_type)),cex.axis=0.9)
+mtext(text = "Thymopoiesis score", side = 2, line=2,cex=0.65)
+
+"Boxplot: Cytotoxic T cell ~ histology"
+boxplot(df22["Cytotoxic",match(meta_dt$id,colnames(df22))]~meta_dt$histologic_type,
+        xlab="",ylab="",xaxt='n',yaxt='n',
+        col=histo_pal[levels(factor(meta_dt$histologic_type))],cex.axis=0.8)
+axis(2,cex.axis=0.9,padj=0.5)
+mapply(axis, side = 1, at = 1:6, labels = levels(factor(meta_dt$histologic_type)),cex.axis=0.9)
+mtext(text = "Cytotoxic T cell score", side = 2, line=2,cex=0.65)
+
+"Boxplot: Exhausted T cell ~ histology"
+boxplot(df22["Exhausted",match(meta_dt$id,colnames(df22))]~meta_dt$histologic_type,
+        xlab="",ylab="",xaxt='n',yaxt='n',
+        col=histo_pal[levels(factor(meta_dt$histologic_type))],cex.axis=0.8)
+axis(2,cex.axis=0.9,padj=0.5)
+mapply(axis, side = 1, at = 1:6, labels = levels(factor(meta_dt$histologic_type)),cex.axis=0.9)
+mtext(text = "Exhausted T cell score", side = 2, line=2,cex=0.65)
+
+
+"Boxplot: B cell ~ histology"
+boxplot(df22["B cell",match(meta_dt$id,colnames(df22))]~meta_dt$histologic_type,
+        xlab="",ylab="",xaxt='n',yaxt='n',
+        col=histo_pal[levels(factor(meta_dt$histologic_type))],cex.axis=0.8)
+axis(2,cex.axis=0.9,padj=0.5)
+mapply(axis, side = 1, at = 1:6, labels = levels(factor(meta_dt$histologic_type)),cex.axis=0.9)
+mtext(text = "B cell score", side = 2, line=2,cex=0.65)
+
+
 dev.off()
 
 
 
 
-biplot.prcomp2(pca2, bg=circlize::colorRamp2(seq(1,4,length.out=6),
-                                             c("#F2F2F2","#BFBFBF","#8C8C8C","#595959","#242424","#BF0404")
-)(IGH_sum),pt.cex=2,bty='n',xaxt='n',yaxt='n',xlab='',ylab='',textaxis=F,
-xlim=c(-0.35,0.25),ylim=c(-0.2,0.25),draw.box=F,
-pch=21);mtext("IGH*",cex=c(1),font=2, side=3,line=-2,adj=c(0.03))
+"------------------------------------------------------------------------------"
+"                                                                              "
+"                       other scores ~ genotype                                "
+"                                                                              "
+"------------------------------------------------------------------------------"
 
-par(new=T,pty='m',mar=c(0,3,0,0))
-color.bar2(colorRampPalette(c("#29394c","#3288bd","#66c2a5","#abdda4","#e6f598",
-                             "#ffff33","#fdae61","#f76234","#e84053","#ee165d"))(100),0,2,ylim=c(0,4),thickness=c(0,0.5))
-axis(side=2,at = 0:2,labels = c(0,10,100), las=1)
-par(mar=c(0,0,0,0))
+cairo_pdf("~kjyi/Projects/thymus_single_cell/final2/figures/other_immune_scores_per_group.pdf",
+          width=(200)/25.4,height = 48/25.4,pointsize = 12*0.7*0.9)
+layout(matrix(c(1,2,3,4,5,6),byrow=T,ncol=6), widths=c(1.5,1,1,1,1,1),heights=c(1,1))
+par( mar= c(3,3,1,1), bty='L')
+
+"Scatter: 1-puriuty ~ Cytotoxic T cell"
+plot(y=df22["Exhausted",meta_dt$id],
+     x=(1-meta_dt$final_cellularity),
+     xlab="",ylab="",xaxt='n',yaxt='n',pch=21,cex=2,lwd=0.7,
+        bg=gtf2i_pal[meta_dt$GTF2I_status2],cex.axis=0.8)
+axis(2,cex.axis=0.9,padj=0.5)
+axis(1,cex.axis=0.9,padj=0.5)
+# mapply(axis, side = 1, at = 1:3, labels = levels(factor(meta_dt$GTF2I_status2)),cex.axis=0.9)
+mtext(text = "Cytotoxic T cell score", side = 2, line=2,cex=0.65)
+mtext(text = "1 - turmor cell fraction", side = 1, line=2,cex=0.65)
 
 
 
+"Boxplot: Exhausted T cell ~ Group"
+boxplot(df22["Exhausted",match(meta_dt$id,colnames(df22))]~meta_dt$GTF2I_status2,
+        xlab="",ylab="",xaxt='n',yaxt='n',
+        col=gtf2i_pal[levels(factor(meta_dt$GTF2I_status2))],cex.axis=0.8)
+axis(2,cex.axis=0.9,padj=0.5)
+# mapply(axis, side = 1, at = 1:3, labels = levels(factor(meta_dt$GTF2I_status2)),cex.axis=0.9)
+mtext(text = "Exhausted T cell score", side = 2, line=2,cex=0.65)
+
+"Boxplot: Neutrophil ~ Group"
+boxplot(df22["Neutrophil",match(meta_dt$id,colnames(df22))]~meta_dt$GTF2I_status2,
+        xlab="",ylab="",xaxt='n',yaxt='n',
+        col=gtf2i_pal[levels(factor(meta_dt$GTF2I_status2))],cex.axis=0.8)
+axis(2,cex.axis=0.9,padj=0.5)
+# mapply(axis, side = 1, at = 1:3, labels = levels(factor(meta_dt$GTF2I_status2)),cex.axis=0.9)
+mtext(text = "Neutrophil score", side = 2, line=2,cex=0.65)
+
+"Boxplot: NK cell ~ Group"
+boxplot(df22["NK cell",match(meta_dt$id,colnames(df22))]~meta_dt$GTF2I_status2,
+        xlab="",ylab="",xaxt='n',yaxt='n',
+        col=gtf2i_pal[levels(factor(meta_dt$GTF2I_status2))],cex.axis=0.8)
+axis(2,cex.axis=0.9,padj=0.5)
+# mapply(axis, side = 1, at = 1:3, labels = levels(factor(meta_dt$GTF2I_status2)),cex.axis=0.9)
+mtext(text = "NK cell score", side = 2, line=2,cex=0.65)
 
 
+"Boxplot: Dendritic cell ~ Group"
+boxplot(df22["Dendritic cell",match(meta_dt$id,colnames(df22))]~meta_dt$GTF2I_status2,
+        xlab="",ylab="",xaxt='n',yaxt='n',
+        col=gtf2i_pal[levels(factor(meta_dt$GTF2I_status2))],cex.axis=0.8)
+axis(2,cex.axis=0.9,padj=0.5)
+# mapply(axis, side = 1, at = 1:3, labels = levels(factor(meta_dt$GTF2I_status2)),cex.axis=0.9)
+mtext(text = "Dendritic cell score", side = 2, line=2,cex=0.65)
 
 
+"Boxplot: Macrophage ~ Group"
+boxplot(df22["Macrophage",match(meta_dt$id,colnames(df22))]~meta_dt$GTF2I_status2,
+        xlab="",ylab="",xaxt='n',yaxt='n',
+        col=gtf2i_pal[levels(factor(meta_dt$GTF2I_status2))],cex.axis=0.8)
+axis(2,cex.axis=0.9,padj=0.5)
+# mapply(axis, side = 1, at = 1:3, labels = levels(factor(meta_dt$GTF2I_status2)),cex.axis=0.9)
+mtext(text = "Macrophage score", side = 2, line=2,cex=0.65)
 
+dev.off()
 
 

@@ -1,3 +1,12 @@
+
+
+"
+signature plot is updated and can find in 'figure_purity_per_histologictype_vi....R'
+
+"
+
+
+
 dirpath="/home/users/sypark/00_Project/01_thymoma/10_Final_data/16_point_mutation_final_call/01_annotated_file"
 meta_dt=read_tsv('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata/Thymoma_summary_191106_1stSheet.txt')
 

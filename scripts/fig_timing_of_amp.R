@@ -13,8 +13,10 @@ names(stage_pal) <- c('I','II','III','IVa','IVb', '0')
 
 
 tmp_df = meta_dt[meta_dt$GTF2I_status2 %in% c("w","m")&meta_dt$final_cellularity>=0.85,]
+
 tmp_df2 = meta_dt[meta_dt$GTF2I_status2 %in% c("w","m")&meta_dt$final_cellularity>=0.5,]
-# tmp_df = meta_dt[meta_dt$GTF2I_status2 %in% c("w","m")&meta_dt$final_cellularity>=0.75,]
+tmp_df3 = meta_dt[meta_dt$GTF2I_status2 %in% c("w","m")&meta_dt$final_cellularity>=0.75,]
+tmp_df4 = meta_dt[meta_dt$GTF2I_status2 %in% c("w","m")&meta_dt$final_cellularity>=0.8,]
 tmp_df %>%
   with(plot(age_at_diagnosis,mut_rate,ylim=c(0,max(mut_rate)),xlim=c(0,90),
             col=histo_pal[histologic_type]))
@@ -23,66 +25,71 @@ model1 <- lm(mut_rate ~ age_at_diagnosis, data=tmp_df)
 anova(model1)
 summary(model1)
 
-model2 <- lm(mut_rate ~ age_at_diagnosis, data=meta_dt)
+model2 <- lm(mut_rate ~ age_at_diagnosis, data=tmp_df2)
 anova(model2)
 summary(model2)
 
 model3 <- lm(mut_rate ~ age_at_diagnosis + final_cellularity, data=tmp_df)
 summary(model3)
 
+
+model4 <- lm(mut_rate ~ age_at_diagnosis, data=tmp_df4)
+summary(model4)
+
+
+meta_dt$diploid_proportion %>% summary
+tmp_df5 <- meta_dt %>% filter(GTF2I_status2 %in% c('w','m') & final_cellularity >= 0.5 & diploid_proportion >= 0.85)
+model5 <- lm(mut_rate ~ age_at_diagnosis, data = tmp_df5)
+summary(model5)
+# slope=0.005787, p-value=0.03531
+# circle size = tumor cell fraction
+# circle fill = diploid proportion
+# selected 26 cases = border thicker
+n=26
+
+
 # plot --------------------------------------------------------------------
 cairo_pdf("figures/mutation_rate_age.pdf",height = 9/2.54,width=10/2.54,pointsize = 12*0.7)
 par(mar=c(4.1,4.1,2.1,1.1))
 ymax=max(meta_dt$mut_rate[meta_dt$GTF2I_status2 %in% c("w","m")])
-plot(-100,-100,ylim=c(0,ymax),xlim=c(0,90),ylab = "Number of point mutation/Gbps",xlab="",
-     yaxt='n')
+plot(-100,-100,ylim=c(0,ymax),xlim=c(0,90),ylab = "Number of point mutation/Gbps",xlab="",yaxt='n')
 mtext("Age at diagnosis",side=1,line=2)
 axis(2,at=0:14/10,labels=0:14*100,las=2)
-model1 <- lm(mut_rate ~ age_at_diagnosis, data=tmp_df)
-model2 <- lm(mut_rate ~ age_at_diagnosis, data=tmp_df2)
-anova(model1)
-anova(model2)
+# model1 <- lm(mut_rate ~ age_at_diagnosis, data=tmp_df)
+# model2 <- lm(mut_rate ~ age_at_diagnosis, data=tmp_df2)
+# anova(model1)
+# anova(model2)
+model1=model5
 CI <- predict(model1, newdata=tmp_df, interval="prediction",level=0.9) %>% as.data.frame
-CI2 <- predict(model2, newdata=tmp_df2, interval="prediction",level=0.9) %>% as.data.frame
+# CI2 <- predict(model2, newdata=tmp_df2, interval="prediction",level=0.9) %>% as.data.frame
 
-# lines(x=tmp_df$age_at_diagnosis, y=CI$fit, lwd=1.2,col="grey50")
-# abline(model1$coefficients[1],model1$coefficients[2],lwd=1.2,col="#E58C9C",lty=2) # pink
 abline(model1$coefficients[1],model1$coefficients[2],lwd=1.2,col="grey50",lty=2) # pink
-# abline(model2$coefficients[1],model2$coefficients[2],lwd=1.2,col="grey90",lty=2)
 polygon(c(sort(tmp_df$age_at_diagnosis),rev(sort(tmp_df$age_at_diagnosis))),
         c(CI$lwr[order(tmp_df$age_at_diagnosis)],rev(CI$upr[order(tmp_df$age_at_diagnosis)])),
         col="#F0000020",lty = 0)
 
-# polygon(c(sort(tmp_df2$age_at_diagnosis),rev(sort(tmp_df2$age_at_diagnosis))),
-#         c(CI2$lwr[order(tmp_df2$age_at_diagnosis)],rev(CI2$upr[order(tmp_df2$age_at_diagnosis)])),
-#         col="#00000008",lty = 0)
-
-
 meta_dt[meta_dt$GTF2I_status2 %in% c("w","m"),] %>%
   with(points(age_at_diagnosis,mut_rate,
             pch=21, 
-            cex=ifelse(final_cellularity>=0.85,3,ifelse(final_cellularity>=0.5,1.8,1)),
-            bg=circlize::colorRamp2(c(0.1,0.5,0.8,0.9),c("#1585ED","grey85","grey85","red"))(final_cellularity)))
+            cex=ifelse(final_cellularity>=0.85,2.5,ifelse(final_cellularity>=0.5,2,1)),
+            bg=circlize::colorRamp2(c(0.1,0.84,0.85,1),c("white","grey","grey","red"))(diploid_proportion),
+            lwd=ifelse(final_cellularity>=0.5&diploid_proportion>=0.85,1.5,0.5)))
+            # bg=ifelse(diploid_proportion>=0.85, "red","grey")))
+
 
 ymax=max(meta_dt$mut_rate[meta_dt$GTF2I_status2 %in% c("w","m")])
-mtext(side = 3,line = -1.4,at = 0,adj = 0,text = "Purity ≥ 0.85",font=2)
+mtext(side = 3,line = -1.4,at = 0,adj = 0,text = "Purity ≥ 0.5 & Diploid % ≥ 0.85 (n=26)",font=2)
 mtext(side = 3,line = -2.8,at = 0,adj = 0,text = bquote(R^2~"="~.(round(summary(model1)$r.squared,3))~","~italic(p)~"="~.(round(anova(model1)$'Pr(>F)'[1],3))))
 mtext(side = 3,line = -3.7,at = 0,adj = 0,text = paste0("slope = ",round(1000*model1$coefficients["age_at_diagnosis"],2),"/Gbps/year"))
 
-# mtext(side = 3,line = -5.1,at = 0,adj = 0,text = "Purity ≥ 0.5",font=2, col="grey60")
-# mtext(side = 3,line = -6.3,at = 0,adj = 0,text = bquote(R^2~"="~.(round(summary(model2)$r.squared,3))~","~italic(p)~"="~.(round(anova(model2)$'Pr(>F)'[1],3))), col="grey60")
-# mtext(side = 3,line = -7,at = 0,adj = 0,text = paste0("slope = ",round(1000*model2$coefficients["age_at_diagnosis"],4),"/kbps/year"), col="grey60")
 library(ComplexHeatmap)
-lgd = Legend(col_fun = circlize::colorRamp2(c(0.1,0.5,0.8,0.9),c("#1585ED","grey85","grey85","red")),
+lgd = Legend(col_fun = circlize::colorRamp2(c(0.1,0.84,0.85,1),c("white","grey","grey","red")),
              title = "",grid_height = unit(0.25,"cm"),labels_gp=gpar(fontsize=7))
 ComplexHeatmap::draw(lgd, x = unit(0.17, "npc"), y = unit(0.3, "npc"), just = c("left", "bottom"))
 legend(0,0.78,xjust = 0,yjust=1,bty="n",
        legend=c("≥ 0.85","≥ 0.5","< 0.5"),pch=21,pt.cex=c(3,2,1),y.intersp = c(0.7,1,1))
 text(0,0.78,"Purity",adj=c(0,0),cex=1,font=2)
-# Cellularity > 0.85
-# Cellularity > 0.50
 dev.off()
-
 
 
 # timing -----------------------------------------------------------------------------------------
@@ -119,7 +126,7 @@ total_mut_count = c("SNU_19_C"=1138,"SNU_26_C"=364)
 
 # mutation_rate = 0.00615193 # /Mbps/year 6.15193 /Gbps/year
 mutation_rate = model1$coefficients[2]
-mutation_rate = 0.00615
+# mutation_rate = 0.00615
 
 #A function to add arrows on the chart
 cairo_pdf("figures/timing_amp.pdf",height = 12/2.54,width=16/2.54,pointsize = 12*0.7)
@@ -165,7 +172,7 @@ for(i in unique(tm_dt$case)){
            lty=1,col="red")
 }
 # legend("topright",legend = "age at diagnosis",lty=2,bty="n")
-legend("bottomright",legend = c("age at diagnosis","genome-wide base \nsubstitution rate"),lty=c(2,1),col=c("black","red"),bty="n")
+legend("bottomright",legend = c("Age at diagnosis","total number of co-amplified\n subsitutions / Gbps"),lty=c(2,1),col=c("black","red"),bty="n")
 
 dev.off()
 

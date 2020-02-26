@@ -3,8 +3,8 @@ library(Seurat)
 library(gelnet)
 library(plot3D)
 
-meta_dt <- read_tsv(paste0('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata',
-                           '/Thymoma_summary_190822_1stSheet.txt'))
+meta_dt <- read_tsv(paste0('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata/Thymoma_summary_200217_1stSheet.txt'))
+dim(meta_dt)
 
 load(file="data/data.scaled.for_comparison.RData")
 # thymus_cluster_scaled
@@ -27,6 +27,43 @@ OCLC_mTEClo <- thymus_cluster_scaled[thymus_cluster_label == "mTEClo", ] %>% gel
 OCLC_mTEChi <- thymus_cluster_scaled[thymus_cluster_label == "mTEChi", ] %>% gelnet(X = ., y = NULL, l1 = 0, l2 = 0.01)
 OCLC_jTECi <- thymus_cluster_scaled[thymus_cluster_label == "jTEC_inner", ] %>% gelnet(X = ., y = NULL, l1 = 0, l2 = 0.01)
 OCLC_mTEClo_old <- thymus_cluster_scaled[thymus_cluster_label == "mTEClo_old", ] %>% gelnet(X = ., y = NULL, l1 = 0, l2 = 0.01)
+
+thymus_cluster_label[1:10]
+
+# small OCLC umap
+merged <- read_rds("data/singlecell/merged.Rds")
+# thymus_cluster_cpm <- GetAssayData(merged_cpm, slot = "data")[gene.use$mgname,] %>%
+#   Matrix::t() %>%
+#   as.data.frame() %>%
+#   {rbind(
+#     cbind(y = "progenitor",.[merged_cpm$simplified == "progenitor",]),
+#     cbind(y = "cTEC",      .[merged_cpm$simplified == "cTEC",]),
+#     cbind(y = "mTEC",      .[merged_cpm$simplified == "mTEC",]),
+#     cbind(y = "Tuft",      .[merged_cpm$simplified == "Tuft",]),
+#     cbind(y = "jTEC",      .[merged_cpm$simplified2 == "jTEC",]),
+#     cbind(y = "mTEClo",    .[merged_cpm$simplified2 == "mTEClo",]),
+#     cbind(y = "mTEChi",    .[merged_cpm$simplified2 == "mTEChi",]),
+#     cbind(y = "jTEC_inner",.[Idents(merged_cpm) == "jTEC (11wo)",]),
+#     cbind(y = "mTEClo_old",.[Idents(merged_cpm) == "mTEClo (11wo)",])
+#   )}
+my_color_palette <- c("#F78981", "#CE425A", "#9D0721", "#0BE2A1", "#20A27B", "#00A1FF", "#0B7DC0", "#AB07FF", "#624B92",
+                      "#5100FF", "#002EFC", "#1F30BF", "#282C4D", "#1C2362", "#E38900", "#8E766B", "#715757", "#926650",
+                      "#BCBCC2", "#84848C", "#74E74C", "#6FA75A", "#102607", "#F766BF")
+my_color_palette <- c("cTEC"="#c24057","progenitor"="#2a9b77","mTEC"="#203f97","jTEC"="grey","Tuft"="#da8510","etc"="grey","stroma"="grey")
+table(merged$simplified)
+
+cairo_pdf("figures/oclc.model.used.cells.pdf",width=40/25.4,height = 45/25.4,pointsize = 12*0.7,onefile=T)
+par(mar=rep(1.5,4))
+plot(merged@reductions$bbknn@cell.embeddings, 
+     pch = 20,
+     cex=1,
+     col = my_color_palette[merged$simplified],
+     # bty = 'l',
+     bty='n',
+     xaxt='n',yaxt='n',xlab="",ylab="",
+     xlim=c(2.5,11.5),ylim=c(-9,-0.57),
+     asp = 1)
+dev.off()
 
 # ** predict thymoma cases ** ----
 # visualization of four indices on tetrahydron space
@@ -56,6 +93,19 @@ thymoma_scores <- data.frame(cTEC       = X2 %*% OCLC_cTEC$w,
                              mTEChi     = X2 %*% OCLC_mTEChi$w,
                              jTECi      = X2 %*% OCLC_jTECi$w,
                              mTEClo_old = X2 %*% OCLC_mTEClo_old$w)
+dim(thymoma_scores)
+
+thymoma_scores[,1:4]
+dim(meta_dt)
+if(F){
+  write_rds(thymoma_scores, "data/oclc.Rds")
+}else{
+  thymoma_scores <- read_rds("/home/users/kjyi/Projects/thymus_single_cell/final2/data/oclc.Rds")[,1:4]
+  dim(thymoma_scores)
+  head(thymoma_scores)
+}
+
+
 
 # thymoma_mggene_scaled$y <- score_with_metadata$class[match(rownames(thymoma_mggene_scaled),rownames(score_with_metadata))]
 unique(as.factor(thymus_cluster_label))
@@ -114,19 +164,17 @@ if(F){
 dev.off()
 681/72*2.54
 
-cairo_pdf("figures/oclc.box.pdf",height = 6/2.54,width=12/2.54,pointsize = 12*0.7,onefile=T)
-# pdf("figures/fig6d.pdf",7,6)
-par(mfrow=c(1,5),mar=c(3,2.7,1,0))
+cairo_pdf("figures/oclc.box.pdf",width=67.5/25.4,height = 45/25.4,pointsize = 12*0.7*0.7,onefile=T)
+par(mfrow=c(1,4),mar=c(3,2.7,1,0.1),oma=c(1,0,1,0.5),xpd=NA)
 for(i in c("Progenitor","cTEC","mTEC","Tuft")){
   boxplot(thymoma_scores[[i]]~thymoma_label,col=gtf2i_pal[c(3,1,2)],xlab="",xaxt='n',ylab="")
-  mtext(paste(i,"index"),1,1,cex=1,font=1)
+  mtext(paste(i,"index"),3,0.5,cex=1,font=1)
 }
-# par(new=T,mar=c(0,0,0,0),oma=c(0,0,0,0))
-par(mar=c(0,0,0,0))
+par(mfrow=c(1,1),new=T,mar=c(0,0,0,0),oma=c(0,0,0,0))
 plot(100,pty='n',bty='n',xaxt='n',yaxt='n',xlab="",ylab="",xlim=c(0,1),ylim=0:1)
-legend("left",
+legend("bottom",horiz = T,bty='n',
        legend=c(expression(GTF2I^mut),expression(GTF2I^WT),"Thymic carcinoma"),
-       pt.bg=gtf2i_pal,pch=22,pt.cex=2,ncol = 1,bty='n',cex=1.2)
+       pt.bg=gtf2i_pal,pch=22,pt.cex=2,cex=1.2)
 dev.off()
 
 
@@ -179,18 +227,20 @@ rowsumto1 <- function(X, ...){
 
 
 {
-  cairo_pdf("figures/supplimentary.oclc.4dscatterplot.pdf",height = 8/2.54,width=15/2.54,pointsize = 12*0.7)
+  cairo_pdf("figures/supplimentary.oclc.4dscatterplot.pdf",height = 8/2.54*0.7,width=26/2.54*0.7,pointsize = 12*0.7)
   
   # http://143.248.19.80:8001/graphics/plot_zoom?width=478&height=591&scale=1
   # tmp_dt <- thymoma_scores[thymoma_histol != "NE",c(3,1,2,4)]
   
   ####
+  # par(mfrow=c(1,3))
   
-  layout(matrix(c(1,4,5,6,7,
-                  1,8,9,10,11,
-                  1,2,2,3,3),ncol=5,byrow=T),width=c())
+  # layout(matrix(c(1,4,5,6,7,
+  #                 1,8,9,10,11,
+  #                 1,2,2,3,3),ncol=5,byrow=T),width=c())
   
-  layout(cbind(c(1,1),c(2,3)),width = c(3,1.1))
+  # layout(cbind(c(1,1),c(2,3)),width = c(3,1.1))
+  layout(matrix(c(1,2,3),ncol=3),width = c(3,1,1))
   par(mar = c(0.5,0.5,0.5,0.5))
   line3Dfx <- function(x,y,z,p=pmat,...){
     XY <- trans3D(x,y,z, p = pmat)
@@ -206,6 +256,7 @@ rowsumto1 <- function(X, ...){
     segments(x0 = XY$x,y0 = XY$y,x1 = XYZ$x,y1 = XYZ$y,col=line.col,...)
     points(XY$x, XY$y,col=pt.col,...)
   }
+  
   par(mar=c(0.5,0.5,0.5,0.5))
   # par(mar=c(0,0,0,0))
   pmat <- thymoma_scores[,c(3,1,2,4)] %>% range01col %>% rowsumto1 %>% Dim4Dto3D() %>%
@@ -225,27 +276,27 @@ rowsumto1 <- function(X, ...){
            labels = c("P", "C", "M", "T"), cex = 0.8)
   thymoma_scores[,c(3,1,2,4)] %>% range01col %>% rowsumto1 %>% Dim4Dto3D() %>%
   {lollipop3Dfx(.[,1],.[,2],.[,3], pt.col='black', line.col="grey",
-                bg=gtf2i_pal[thymoma_label], cex = 1.3, pch = 21)}
+                bg=gtf2i_pal[thymoma_label], cex = 1.6, pch = 21)}
   line3Dfx(x = c(1,.5),
            y = c(0,sqrt(3)/6),
            z= c(0,sqrt(6)/3))
-  
+  box()
   #ctec mtec tecp tuft
   thymoma_scores[,c(3,1,2,4)] %>% range01col %>% rowsumto1 %>% Dim4Dto3D() %>%
   {plot(.[,2],.[,3],xlim = c(-0.05,sqrt(3)/2+0.05), ylim = c(-0.05,sqrt(6)/3+0.05),
-        bg=gtf2i_pal[thymoma_label], asp=1,cex=1,
+        bg=gtf2i_pal[thymoma_label], asp=1,cex=1.5,
         xaxt='n',yaxt='n',xlab="",ylab="", bty = "n", pch = 21)}
   lines(c(0,sqrt(3)/2,sqrt(3)/6,0), c(0,0,sqrt(6)/3,0))
   text(c(0,0.29,0.85),c(-0.05,0.85,-0.05),c("P+C","T","M"),cex=0.8)
-  
+  box()
   thymoma_scores[,c(3,1,2,4)] %>% range01col %>% rowsumto1 %>% Dim4Dto3D() %>%
   {plot(.[,1],.[,2],xlim = c(-0.05,1.05), ylim = c(-0.05,sqrt(3)/2+0.05),
-        bg=gtf2i_pal[thymoma_label], asp=1,cex=1,
+        bg=gtf2i_pal[thymoma_label], asp=1, cex=1.5,
         xaxt='n',yaxt='n',xlab="",ylab="", bty = "n", pch = 21)}
   lines(c(0,1,.5,0), c(0,0,sqrt(3)/2,0))
   rbind(c(1,0,0,0),c(0,1,0,0),c(0,0,1,0)) %>% Dim4Dto3D() %>%
   {text(.[,1]+c(-0.04,0.04,0.04),.[,2]+c(-0.04,-0.04,+0.04),c("P","C","M"),cex=0.8)}
-  
+  box()
   dev.off()
 }
 

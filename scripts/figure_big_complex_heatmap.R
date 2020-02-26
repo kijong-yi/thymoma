@@ -1,4 +1,4 @@
-read_tsv('abcd')
+# read_tsv('abcd')
 
 #BiocManager::install("ComplexHeatmap")
 library(ComplexHeatmap)
@@ -6,7 +6,7 @@ library(tidyverse)
 library(ggsignif)
 library(circlize)
 # Load meta data
-meta_dt <- read_tsv('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata/Thymoma_summary_191205_1stSheet.txt')
+meta_dt <- read_tsv('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata/Thymoma_summary_200217_1stSheet.txt')
 meta_dt <- meta_dt[is.na(meta_dt$id) == F, ]
 meta_dt$age_at_diagnosis %>% summary()
 meta_dt$TCGA_paper_GTF2Imt %>% unique()
@@ -21,7 +21,7 @@ nrow(meta_dt)
 
 # Load oncogrid data and manipulation
 dt <- read_tsv('~sypark/00_Project/01_thymoma/10_Final_data/16_point_mutation_final_call/05_recurrent_gene/recurrently_mutated_genes.sort.2.txt.selected')
-dt <- dt %>% rename(gene_name = `#gene_name`) %>% select(gene_name, sample_id, mt_type)
+dt <- dt %>% dplyr::rename(gene_name = `#gene_name`) %>% dplyr::select(gene_name, sample_id, mt_type)
 dt$mt_type %>% unique()
 #assign number to type of mutations
 #101:missense mutation, 104:in-frame indel, 102:nonsense mutation, 105:frame-shift indel, 103:splice site mutation
@@ -77,7 +77,8 @@ show_col(my_pal)
 meta_dt$histologic_type %>% unique()
 histo_pal = pal_aaas("default")(10)[c(4,1,7,8,6,2,3,5)]
 show_col(histo_pal)
-names(histo_pal) = c("A","AB","MN-T","B1","B2","B3","NE","TC")
+histo_pal= c(histo_pal,"black")
+names(histo_pal) = c("A","AB","MN-T","B1","B2","B3","NE","CA-SqCC","CA-UN")
 
 stage_pal=c('#ffffd4','#fed98e','#fe9929','#d95f0e','#993404')
 show_col(stage_pal)
@@ -110,9 +111,10 @@ mTEC_pal = colorRamp2(c(-3,7), c("white",pal_aaas("default")(10)[3]))
 tuft_pal = colorRamp2(c(-2,3),c("white",pal_aaas("default")(10)[5]))
 progenitor_pal = colorRamp2(c(-1,1.5),c("white",pal_aaas("default")(10)[8]))
 
-
+meta_dt$histologic_type <- meta_dt$histologic_type2
+meta_dt$histologic_type2 %>% table
 # MT plot
-meta_dt$histologic_type <- factor(meta_dt$histologic_type, levels = c("A","AB","MN-T","B1","B2","B3","TC","NE"))
+meta_dt$histologic_type <- factor(meta_dt$histologic_type, levels = c("A","AB","MN-T","B1","B2","B3","CA-SqCC","CA-UN","NE"))
 MT_meta_dt <- meta_dt %>% filter(GTF2I_status2 == 'm') %>% arrange(histologic_type,desc(n_pointmt/bait_size))
 histo_num <- MT_meta_dt %>% group_by(histologic_type) %>% count() %>% .$n
 names(histo_num) <- MT_meta_dt %>% group_by(histologic_type) %>% count() %>% .$histologic_type
@@ -128,11 +130,12 @@ MT_top= HeatmapAnnotation(n_pointmt = anno_barplot(MT_meta_dt$n_pointmt/MT_meta_
                           irs4 = anno_barplot(log10(MT_meta_dt$corrected_IRS4_TPM+0.1)+1, ylim= c(0,4), axis_param = list(at=log10(c(0, 1, 10, 100)+0.1)+1, labels=c(0,1,10,100))),
                           show_annotation_name = T, 
                           col = list(hist = histo_pal, stage = stage_pal, cohort = cohort_pal, age = age_pal, purity = purity_pal, thymocyte = thymocyte_pal, cytotoxic = cytotoxic_pal,
-                                     cTEC=cTEC_pal, mTEC=mTEC_pal, tuft=tuft_pal, progenitor=progenitor_pal)
+                                     cTEC=cTEC_pal, mTEC=mTEC_pal, tuft=tuft_pal, progenitor=progenitor_pal),
+                          show_legend = c(FALSE)
 )
 
 MT_onco_dt <- oncodt[,MT_meta_dt$id] 
-MT_cn_dt <- cndt %>% select(chr_arm, MT_meta_dt$id) %>% as.data.frame() %>% column_to_rownames('chr_arm') %>% as.matrix()
+MT_cn_dt <- cndt %>% dplyr::select(chr_arm, MT_meta_dt$id) %>% as.data.frame() %>% column_to_rownames('chr_arm') %>% as.matrix()
 colnames(MT_onco_dt) == colnames(MT_cn_dt)
 MT_occn_dt <- rbind(MT_onco_dt, MT_cn_dt)
 class(MT_occn_dt) <- "numeric"
@@ -170,10 +173,11 @@ WT_top= HeatmapAnnotation(n_pointmt = anno_barplot(WT_meta_dt$n_pointmt/WT_meta_
                           show_annotation_name = F, 
                           col = list(hist = histo_pal, cohort = cohort_pal, age = age_pal, purity = purity_pal, stage = stage_pal,
                                      cytotoxic = cytotoxic_pal, thymocyte = thymocyte_pal,
-                                     cTEC=cTEC_pal, mTEC=mTEC_pal, tuft=tuft_pal, progenitor=progenitor_pal)
+                                     cTEC=cTEC_pal, mTEC=mTEC_pal, tuft=tuft_pal, progenitor=progenitor_pal),
+                          show_legend = c(FALSE)
 )
 WT_onco_dt <- oncodt[,WT_meta_dt$id] 
-WT_cn_dt <- cndt %>% select(chr_arm, WT_meta_dt$id) %>% as.data.frame() %>% column_to_rownames('chr_arm') %>% as.matrix()
+WT_cn_dt <- cndt %>% dplyr::select(chr_arm, WT_meta_dt$id) %>% as.data.frame() %>% column_to_rownames('chr_arm') %>% as.matrix()
 colnames(WT_onco_dt) == colnames(WT_cn_dt)
 WT_occn_dt <- rbind(WT_onco_dt, WT_cn_dt)
 class(WT_occn_dt) <- "numeric"
@@ -187,7 +191,7 @@ WT_body <- Heatmap(WT_occn_dt, top_annotation = WT_top, right_annotation = WT_ri
 # draw(WT_body)
 
 # TC plot
-TC_meta_dt <- meta_dt %>% filter(GTF2I_status2 == 'c') %>% arrange(histologic_type,desc(n_pointmt/bait_size))
+TC_meta_dt <- meta_dt %>% filter(GTF2I_status2 == 'c') %>% arrange(histologic_type=="NE",desc(n_pointmt/bait_size))
 TC_meta_dt$n_pointmt/TC_meta_dt$bait_size
 histo_num <- TC_meta_dt %>% group_by(histologic_type) %>% count() %>% as.data.frame %>% column_to_rownames("histologic_type") %>% t
 TC_col_split <- c(rep('TC', histo_num[,'TC']), rep("NE",histo_num[,'NE']))
@@ -208,10 +212,11 @@ TC_top= HeatmapAnnotation(n_pointmt = anno_barplot(TC_meta_dt$n_pointmt/TC_meta_
                           irs4 = anno_barplot(log10(TC_meta_dt$corrected_IRS4_TPM+0.1)+1, ylim= c(0,4), axis_param = list(at=log10(c(0, 1, 10, 100)+0.1)+1, labels=c(0,1,10,100))),
                           show_annotation_name = F, 
                           col = list(hist = histo_pal, cohort = cohort_pal, age = age_pal, purity = purity_pal, stage = stage_pal, cytotoxic = cytotoxic_pal, thymocyte = thymocyte_pal,
-                                     cTEC=cTEC_pal, mTEC=mTEC_pal, tuft=tuft_pal, progenitor=progenitor_pal)
+                                     cTEC=cTEC_pal, mTEC=mTEC_pal, tuft=tuft_pal, progenitor=progenitor_pal),
+                          show_legend = c(FALSE)
 )
 TC_onco_dt <- oncodt[,TC_meta_dt$id] 
-TC_cn_dt <- cndt %>% select(chr_arm, TC_meta_dt$id) %>% as.data.frame() %>% column_to_rownames('chr_arm') %>% as.matrix()
+TC_cn_dt <- cndt %>% dplyr::select(chr_arm, TC_meta_dt$id) %>% as.data.frame() %>% column_to_rownames('chr_arm') %>% as.matrix()
 colnames(TC_onco_dt) == colnames(TC_cn_dt)
 TC_occn_dt <- rbind(TC_onco_dt, TC_cn_dt)
 class(TC_occn_dt) <- "numeric"
@@ -223,7 +228,8 @@ TC_body <- Heatmap(TC_occn_dt, top_annotation = TC_top, right_annotation = TC_ri
 
 if(F){
   MT_body + WT_body + TC_body
-}
+  draw(TC_body)
+ }
 # draw(TC_body)
 
 # Draw merged plot
@@ -258,13 +264,11 @@ plgd2 = packLegend(lgd_onco, lgd_mCN, max_width = unit(5,'cm'))
 
 plgd3 = packLegend(lgd_hist, lgd_cohort, lgd_age, lgd_purity, lgd_stage, max_width = unit(5,'cm'),lgd_onco, lgd_mCN)
 
-draw(plgd3)
+# cairo_pdf("figures/bigbigcomplexheatmap.pdf",width=3500/254,height = 2700/254,pointsize = 12*0.7)
+if(F){
+  cairo_pdf("figures/bigbigcomplexheatmap.pdf",width=1.7*1900/254,height = 1.7*1600/254,pointsize = 12*0.7/1.8)
+  draw(plot_list, ht_gap = unit(0.5, "cm"),annotation_legend_list = plgd3)
+  dev.off()
+}
 
-#setwd("~/00_Project/01_thymoma/10_Final_data/17_Figures_for_publication")
-#pdf('./mutation_CN_heatmap/MT_CN_heatmap_legend_191017.pdf',width=5, height=10)
-#draw(plgd)
-#dev.off()
-cairo_pdf("figures/bigbigcomplexheatmap.pdf",height = 27/2.54,width=35/2.54,pointsize = 12*0.7)
-draw(plot_list, ht_gap = unit(0.5, "cm"),annotation_legend_list = plgd3)
-dev.off()
 

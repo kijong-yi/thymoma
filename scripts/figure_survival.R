@@ -15,7 +15,24 @@ names(fit1$strata) = c("Carcinoma","GTF2I-mutant","GTF2I-WT,IRS4 high","GTF2I-WT
 fit1 %>% summary
 
 fit2 <- survfit(Surv(RecurFreeSurvival/365, Recur_event) ~ group, data = meta_dt[meta_dt$group %in% c("wildtypeIRShigh","wildtypeIRSlow"),],conf.type = "log-log")
-survdiff(Surv(RecurFreeSurvival/365, Recur_event) ~ group, data = meta_dt[meta_dt$group %in% c("wildtypeIRShigh","wildtypeIRSlow"),])
+survdiff(Surv(RecurFreeSurvival/365, Recur_event) ~ group, 
+         data = meta_dt[meta_dt$group %in% c("wildtypeIRShigh","wildtypeIRSlow"),])
+
+survdiff(Surv(RecurFreeSurvival/365, Recur_event) ~ group, 
+         data = meta_dt[meta_dt$group %in% c("wildtypeIRShigh","mutant"),])
+"mutant"
+"carcinoma"
+"wildtypeIRShigh"
+"wildtypeIRSlow"
+survdiff(Surv(RecurFreeSurvival/365, Recur_event) ~ group, 
+         data = meta_dt[meta_dt$group %in% c("wildtypeIRShigh","carcinoma"),])
+
+
+as.data.frame(meta_dt[meta_dt$group %in% c("wildtypeIRShigh","wildtypeIRSlow"),]) %>% 
+{coin::logrank_test(Surv(.$RecurFreeSurvival/365, .$Recur_event) ~ factor(.$group),
+                    type = "Tarone-Ware", ties.method="average-scores")}
+
+
 plot(fit2)
 {
   lwd=2
@@ -29,9 +46,20 @@ plot(fit2)
   legend("bottomright",legend=c(expression(GTF2I^mut),expression(GTF2I^WT~IRS4^low),expression(GTF2I^WT~IRS4^high),"Thymic carcinoma"),
          bty="n",lty=1,lwd=lwd,col=c("#3C5488FF","#F39B7FFF","#DC0000FF","#00A087FF"))
   dev.off()
+  getOption("viewer")("figures/KM_survival.1.pdf")
 }
-
-
+if(F){
+  median(meta_dt$final_cellularity[meta_dt$GTF2I_status2 == "w"])
+  meta_dt$group3 = ifelse(meta_dt$GTF2I_status2 %in% c("m","c"),c(m="mutant",c="carcinoma")[meta_dt$GTF2I_status2],
+           ifelse(meta_dt$final_cellularity>0.18,"wildtypePurityhigh","wildtypePuritylow"))
+  fit3 <- survfit(Surv(RecurFreeSurvival/365, Recur_event) ~ group3, data = meta_dt,conf.type = "log-log")
+  
+  plot(fit3,
+           lwd=2,
+           col=c("#00A087FF","#3C5488FF","#DC0000FF","#F39B7FFF"),
+           ylab="Recurrence free survival probability",
+           xlab="Time (years)",mark.time=T)
+}
 
 
 
@@ -193,7 +221,7 @@ ggforest2 <- function (model, data = NULL, main = "",
   y_cistring <- rangeplot[1] + cpositions[4] * width
   y_stars <- rangeplot[1] + cpositions[5] * width
   x_annotate <- seq_len(nrow(toShowExpClean))
-  annot_size_mm <- fontsize * as.numeric(convertX(unit(theme_get()$text$size, "pt"), "mm"))
+  annot_size_mm <- fontsize * as.numeric(grid::convertX(unit(theme_get()$text$size, "pt"), "mm"))
   
   p <- ggplot(toShowExpClean, aes(seq_along(var), exp(estimate))) +
     geom_rect(aes(xmin = seq_along(var) - 0.5, xmax = seq_along(var) +
@@ -261,8 +289,8 @@ ggforest2 <- function (model, data = NULL, main = "",
 }
 # ---------------------------------------------------------------------------------------------------------------------
 
-cairo_pdf("figures/coxph.1.pdf",height = 11/2.54,width=23/2.54,pointsize = 12*0.7)
-ggforest2(bigcoxmodel3,main = "",fontsize =1,cpositions = c(0.01, 0.19, 0.37,0.42,0.94),whisker_start_position=0.6,
+p <- ggforest2(bigcoxmodel3,main = "",fontsize =1,cpositions = c(0.01, 0.21, 0.40,0.45,0.94),
+               whisker_start_position=0.64,
           second_column_labels = c("Female",
                                    "Male",
                                    expression(paste('I, II')),
@@ -272,8 +300,14 @@ ggforest2(bigcoxmodel3,main = "",fontsize =1,cpositions = c(0.01, 0.19, 0.37,0.4
                                    expression(GTF2I^WT~IRS4^low),
                                    expression(GTF2I^WT~IRS4^high)) %>% rev,
           first_column_labels = c("","","GTF2I/IRS4 status","","","Masaoka stage","","Gender"))
-dev.off()
 
+
+cairo_pdf("figures/coxph.1.pdf",height = 950/254,width=1900/254,pointsize = 12*0.7)
+print(p)
+dev.off()
+12*0.7
+
+getOption("viewer")("figures/coxph.1.pdf")
 # -------------------------------------------------------
 
 fit1 <- survfit(Surv(RecurFreeSurvival/365, Recur_event) ~ group, data = meta_dt,conf.type = "log-log")

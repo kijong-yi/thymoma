@@ -204,8 +204,8 @@ p1 <- ggplot(subset(cor_res, !cor_res$gene %in% blood_genes), aes(x=Cytotoxic_ce
   xlab("Correlation with Cytotoxic cell score")+ylab("Correlation with Exhausted CD8 score")+ggtitle("Non-immune cells")
 p1
 
-target_genes <- c('PDCD1','CTLA4','BTLA','LAG3','CD96','TIGIT','PVRIG','HAVCR2')
-label_names <- c('PD1','CTLA-4','BTLA','LAG-3','CD96','TIGIT','CD112R','TIM-3')
+target_genes <- c('PDCD1','CTLA4','BTLA','LAG3','CD96','TIGIT','PVRIG','HAVCR2',"TNFRSF18")
+label_names <- c('PD1','CTLA-4','BTLA','LAG-3','CD96','TIGIT','CD112R','TIM-3',"GITR!!!!!!!!!!!")
 names(label_names) = target_genes
 length(target_genes)
 cor_res %>% filter(gene %in% target_genes) %>% nrow()
@@ -230,7 +230,7 @@ p1 <- ggplot(tmp_dat,
   geom_hline(yintercept = 0, linetype="dashed")+
   geom_vline(xintercept = 0, linetype="dashed")+
   stat_density2d(aes(alpha=..level..), geom="polygon",show.legend = FALSE,bins = 30) +
-  ggtitle(paste0("Non-immune cell genes (n=",nrow(tmp_dat),")"))+ 
+  ggtitle(paste0("Other genes (n=",nrow(tmp_dat),")"))+ 
   # geom_point(colour="black",alpha=0.02)+
   geom_point(data=subset(cor_res, cor_res$gene %in% target_genes1), aes(x=Cytotoxic_cells, y=Exhausted_CD8),color = "red")+ 
   scale_alpha_continuous(limits=c(0,16),breaks=seq(0,16,by=2))+
@@ -249,7 +249,7 @@ p2 <-  ggplot(tmp_dat2,
   geom_hline(yintercept = 0, linetype="dashed")+
   geom_vline(xintercept = 0, linetype="dashed")+
   stat_density2d(aes(alpha=..level..), geom="polygon",show.legend = FALSE,bins = 30) +
-  ggtitle(paste0("Immune cell genes (n=",nrow(tmp_dat2),")"))+ 
+  ggtitle(paste0("GTEx blood exp. genes (n=",nrow(tmp_dat2),")"))+ 
   # scale_alpha_continuous(limits=c(0,5),breaks=seq(0,5,by=1))+
   # geom_point(colour="black",alpha=0.02)+
   geom_point(data=subset(cor_res, cor_res$gene %in% target_genes), aes(x=Cytotoxic_cells, y=Exhausted_CD8),color = "red")+ 
@@ -261,8 +261,10 @@ p2 <-  ggplot(tmp_dat2,
   xlab("Correlation with cytotoxic cell score") + ylab("Correlation with exhausted CD8 score") +
   theme(legend.position = "none")+
   theme_bw()
-cairo_pdf("figures/scatter_corr_exhaustion_related.pdf",height = 10/2.54,width=18/2.54,pointsize = 12*0.7)
-cowplot::plot_grid(p1, p2)
+cairo_pdf("figures/scatter_corr_exhaustion_related.pdf",height =10/2.54,width=20/2.54,pointsize = 12*0.7)
+cowplot::plot_grid(p2, p1)
+
+
 dev.off()
 
 #mixCR - Cytotoxic_cells

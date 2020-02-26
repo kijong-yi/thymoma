@@ -39,32 +39,32 @@ dev.off()
 
 epi <- !(merged$simplified %in% c("stroma","etc"))
 
-# batch figure
-cairo_pdf("figures/umapbatch.pdf",height = 3.3/2.54,width=12/2.54,pointsize = 12*0.7)
+# # batch figure
+# cairo_pdf("figures/umapbatch.pdf",height = 3.3/2.54,width=12/2.54,pointsize = 12*0.7)
 batchcolor <- c("#BEBEBE50","#228a3bA0")
-par(mfrow=c(1,4),pty='s',mar=c(0.1,0.1,1.5,0.1))
-for(i in unique(merged$age)){
-  plot(merged@reductions$bbknn@cell.embeddings[epi,], 
-       pch = 21,
-       col="#00000000",
-       cex=1,
-       bg = batchcolor[as.numeric(i == merged$age[epi])+1],
-       bty = 'n',
-       xaxt='n',yaxt='n',xlab="",ylab="",
-       xlim=c(2,12),ylim=c(-9,-1),
-       asp = 1)
-  mtext(i,font=2)
-  
-  points(merged@reductions$bbknn@cell.embeddings[epi,][i == merged$age[epi],], 
-       pch = 21,
-       bg="#228a3bC0",
-       col="#00000000",
-       cex=1)
-       # bg = batchcolor[as.numeric(i == merged$age[epi])+1])
-  mtext(i,font=2)
-  
-}
-dev.off()
+# par(mfrow=c(1,4),pty='s',mar=c(0.1,0.1,1.5,0.1))
+# for(i in unique(merged$age)){
+#   plot(merged@reductions$bbknn@cell.embeddings[epi,], 
+#        pch = 21,
+#        col="#00000000",
+#        cex=1,
+#        bg = batchcolor[as.numeric(i == merged$age[epi])+1],
+#        bty = 'n',
+#        xaxt='n',yaxt='n',xlab="",ylab="",
+#        xlim=c(2,12),ylim=c(-9,-1),
+#        asp = 1)
+#   mtext(i,font=2)
+#   
+#   points(merged@reductions$bbknn@cell.embeddings[epi,][i == merged$age[epi],], 
+#        pch = 21,
+#        bg="#228a3bC0",
+#        col="#00000000",
+#        cex=1)
+#        # bg = batchcolor[as.numeric(i == merged$age[epi])+1])
+#   mtext(i,font=2)
+#   
+# }
+# dev.off()
 
 # marker figures
 
@@ -72,6 +72,7 @@ dev.off()
 markers=c(
   Foxn1="Foxn1",
   Psmb11="Psmb11",
+  Lgals7="Lgals7",
   Enpep="Enpep (Ly51)",
   Pax1="Pax1",
   Fezf2="Fezf2", 
@@ -81,6 +82,7 @@ markers=c(
   L1cam="L1cam",
   Ovol3="Ovol3",
   Prox1="Prox1", 
+  Pdpn="Pdpn",
   Tnfrsf11a="Tnfrsf11a (Rank)",
   Ccl21a="Ccl21a",
   Ivl="Ivl (Involucrin)",
@@ -89,7 +91,9 @@ markers=c(
   Sall1="Sall1",
   Bmp4="Bmp4",
   Tbx1="Tbx1",
-  Irs4="Irs4")#%>%tail(3)
+  Irx1="Irx1",
+  Irs4="Irs4"
+  )#%>%tail(3)
 # markers=c("Enpep")
 expdat <- GetAssayData(merged)
 summary(expdat["Psmb11",epi])
@@ -103,8 +107,9 @@ val2col <- function(x,pal=c("#29394c","#3288bd","#66c2a5","#abdda4","#e6f598",
 }
 
 
-cairo_pdf("figures/umapbatchandmarkers.pdf",height = 12/2.54,width=12/2.54,pointsize = 12*0.7)
-par(mfrow=c(5,5),pty='s',mar=c(0.1,0.1,1.5,0.1))
+cairo_pdf("figures/umapbatchandmarkers.pdf",width=77.5/25.4,height = 120.5/25.4,pointsize = 12*0.7*0.8)
+# s <- svglite::svgstring(width=77.5/25.4,height = 132.5/25.4,pointsize = 12*0.7*0.8)
+par(mfrow=c(7,4),pty='s',mar=c(0.1,0.1,1.5,0.1))
 for(i in unique(merged$age)){
   plot(merged@reductions$bbknn@cell.embeddings[epi,], 
        pch = 21,
@@ -115,7 +120,8 @@ for(i in unique(merged$age)){
        xaxt='n',yaxt='n',xlab="",ylab="",
        xlim=c(2,12),ylim=c(-9,-1),
        asp = 1)
-  mtext(i,font=2)
+  # mtext(i,font=2)
+  title(i,adj=0,cex=1.1,line=-0.5)
   points(merged@reductions$bbknn@cell.embeddings[epi,][i == merged$age[epi],], 
          pch = 21,
          bg="#228a3bC0",
@@ -124,6 +130,22 @@ for(i in unique(merged$age)){
   # title(i,adj=0,cex=1.1,line=-0.5)
 }
 
+
+
+par(mar=c(0.1,0.1,1.5,0.1))
+for(i in names(markers)){
+  plot(merged@reductions$bbknn@cell.embeddings[epi,][order(expdat[i,epi],decreasing = F),],
+       pch = 20,
+       cex=0.8,
+       col = val2col(expdat[i,epi][order(expdat[i,epi],decreasing = F)]),
+       bty = 'n',
+       xaxt='n',yaxt='n',xlab="",ylab="",
+       xlim=c(2,12),ylim=c(-9,-1),
+       asp = 1)
+  title(markers[i],adj=0,cex=1.1,line=-0.5)
+  # title("Title text", adj = 0.5, line = 0)
+}
+ 
 color.bar <- function(lut, min, max=-min, nticks=11, ticks=seq(min, max, len=nticks), title='') {
   scale = (length(lut)-1)/(max-min)
   # dev.new(width=1.75, height=5)
@@ -134,26 +156,12 @@ color.bar <- function(lut, min, max=-min, nticks=11, ticks=seq(min, max, len=nti
     rect(y,0,y+1/scale,2, col=lut[i], border=NA)
   }
   rect(min,0,max,2)
-  mtext(expression(log[10](CPM~"x"~100)),side = 1,line=2.5)
+  mtext(expression(log[10]*"("*CPM~"x"~100*")"),side = 1,line=2.5)
 }
 par(mar=c(5.1,0.5,1.5,0.5),pty='m')
 color.bar(colorRampPalette(c("#29394c","#3288bd","#66c2a5","#abdda4","#e6f598",
-                             "#ffff33","#fdae61","#f76234","#e84053","#ee165d"))(100),
-          0,4)
-
-par(mar=c(0.1,0.1,1.5,0.1))
-for(i in names(markers)){
-  plot(merged@reductions$bbknn@cell.embeddings[epi,], 
-       pch = 20,
-       cex=0.8,
-       col = val2col(expdat[i,epi]),
-       bty = 'n',
-       xaxt='n',yaxt='n',xlab="",ylab="",
-       xlim=c(2,12),ylim=c(-9,-1),
-       asp = 1)
-  title(markers[i],adj=0,cex=1.1,line=-0.5)
-  # title("Title text", adj = 0.5, line = 0)
-}
-
+                             "#ffff33","#fdae61","#f76234","#e84053","#ee165d"))(100),0,4)
 
 dev.off()
+htmltools::browsable(htmltools::HTML(s()))
+

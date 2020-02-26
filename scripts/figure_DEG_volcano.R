@@ -78,22 +78,36 @@ ggplot(volc_dt, aes(x=WT_mean - MT_mean, y=-log10(t.test.pvalue)))+
 
 WT_high_genes <- volc_dt %>% filter(WT_mean - MT_mean >=1 & t.test.pvalue < 0.05/nrow(volc_dt)) %>% .$gene
 
+
 # kjyi's code-------------------------------------------------------------------------------------------
 
+volc_dt$t.test.pvalue
+volc_dt$p.adjust = p.adjust(volc_dt$t.test.pvalue, method="BH")
 
+WT_high_genes <- volc_dt %>% filter(WT_mean - MT_mean >=0 & p.adjust < 0.01) %>% .$gene
+MT_high_genes <- volc_dt %>% filter(WT_mean - MT_mean <0 & p.adjust < 0.01) %>% .$gene
+length(WT_high_genes)
+length(MT_high_genes)
+length(MT_high_genes) + length(WT_high_genes)
+degs = list(WT_high = WT_high_genes,
+            MT_high = MT_high_genes)
+if(F) write_rds(degs,"data/degs.Rds")
 
-cairo_pdf("figures/volcano.1.pdf",height = 8/2.54,width=8/2.54,pointsize = 12*0.7)
-par(pty="s",mar=c(3,3.5,0.5,0.5))
-with(volc_dt,{
-  x=WT_mean-MT_mean
-  y=-log10(p.adjust(t.test.pvalue, method = "BH"))
+(p.adjust(volc_dt$t.test.pvalue, method = "BH"))[volc_dt$gene=="IRS4"]
+
+cairo_pdf("figures/volcano.1.pdf",width=1000/254,height = 800/254,pointsize = 12*0.7)
+par(mar=c(3,3.5,0.5,0.5))
+
+  x=volc_dt$WT_mean-volc_dt$MT_mean
+  y=-log10(p.adjust(volc_dt$t.test.pvalue, method = "BH"))
+  print(table(y>2))
+  # y = -log10(t.test.pvalue)
   y[is.na(y)] = 0
   labelat = (abs(x)>2) | (y > 40)
-  col=ifelse(is.na(role_in_cancer), "grey","red")
+  col=ifelse(is.na(volc_dt$role_in_cancer), "grey","red")
   greys=col=="grey"
   reds=col=="red"
-  pch=21
-  plot(x[greys],y[greys],bg="#00000020",col="#00000030",pch=pch,
+  plot(x[greys],y[greys],bg="#00000020",col="#00000030",pch=21,
        xlim=c(-max(abs(x)),max(abs(x)))*1.25,
        ylim=c(0,max(y))*1.15,
        # ylab=expression(-log[10]~q),
@@ -102,17 +116,18 @@ with(volc_dt,{
        # xlab=expression((GTF2Imutant - WT))
        # xlab=expression(log[10]~FC)
   )
-  title(ylab=expression(-log[10]~q), line=2)
+  title(ylab=expression(-log[10]~Adj.p), line=2)
   title(xlab=expression(log[10]~FC), line=2)
   # mtext(expression(log[10]~FC),side = 1,line=2)
-  points(x[reds],y[reds],bg="#FF000060",col="#FF000070",pch=pch)
+  points(x[reds],y[reds],bg="#FF000060",col="#FF000070",pch=21)
   # wordcloud::textplot(x=x[labelat],y=y[labelat],words=gene[labelat],cex=1,new=F)
   set.seed(42)
-  maptools::pointLabel(x=x[labelat],y=y[labelat],labels=gene[labelat],method = "GA")
-  # abline(h=-log10(0.05), col= "grey40", lty=2, lwd = 1)
-  # text(1.25*max(abs(x)),-log10(0.001),"q = 0.001", adj=c(1,1.9),col="grey30")
-  # text(-1.25*max(abs(x)),1.15*max(y),"↑ in GTF2I-mutant",adj=c(0,1),font=2)
-  # text(1.25*max(abs(x)),1.15*max(y),"↑ in wild-type",adj=c(1,2),font=2)
+  maptools::pointLabel(x=x[labelat],y=y[labelat],labels=volc_dt$gene[labelat],method = "GA")
+  if(F){
+    points(x=x[volc_dt$gene=="IGFBPL1"],y=y[volc_dt$gene=="IGFBPL1"],pch=21,col="#0000FFBB")
+    text(x=x[volc_dt$gene=="IGFBPL1"],y=y[volc_dt$gene=="IGFBPL1"],labels = "  IGFBPL1",adj=0)
+  }
+  
   legend(-1.25*max(abs(x)),1.15*max(y),legend="in GTF2I-mutant",pch="↑",xjust=0,yjust=1,bty='n',text.font = 2)
   legend(1.25*max(abs(x)),1.15*max(y),legend="in wild-type",pch="↑",xjust=1,yjust=1,bty='n',text.font = 2)
   legend(1.25*max(abs(x)),1.15*max(y),
@@ -122,7 +137,29 @@ with(volc_dt,{
          pch=21,
          xjust=1,yjust=1,bty='n'
   )
-})
+  abline(h=-log10(0.01),lty=2)
+  text(par()$usr[1],-log10(0.01),"Adj.p = 0.01",adj=c(-0.1,-0.1))
+  # points(par()$usr[1],-log10(0.05),col="red")
+
 dev.off()
 
 volc_dt$role_in_cancer %>% table
+
+if(F){save.image("~/Projects/thymus_single_cell/final2/data/snapshop_for_volcanoplot.RData")}
+
+load("~/Projects/thymus_single_cell/final2/data/snapshop_for_volcanoplot.RData")
+
+MM <- volc_dt%>% as.data.frame %>% column_to_rownames("gene") %>% .[,meta_dt$id]%>% as.matrix
+colnames(MM)
+par(pty="s")
+
+plot(MM["IGFBPL1",],MM["IRS4",],pch=21,cex=1.5,bg=gtf2i_pal[meta_dt$GTF2I_status2],
+     xlab="IGFBPL1",ylab="IRS4 (log10(tpm+0.01))")
+
+plot(10^MM["IGFBPL1",meta_dt$id]-0.01,10^MM["IRS4",meta_dt$id]-0.01,pch=21,cex=1.5,bg=gtf2i_pal[meta_dt$GTF2I_status2],
+     xlab="IGFBPL1",ylab="IRS4 (log10(tpm+0.01))")
+
+
+
+
+

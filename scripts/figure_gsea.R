@@ -5,6 +5,9 @@ require(GSVA)
 require(GSEABase)
 library(grid)
 
+table(meta_dt$IRS4_tCN>2, meta_dt$GTF2I_status2)
+table(meta_dt$corrected_IRS4_TPM>5, meta_dt$GTF2I_status2)
+
 # prep ----------------------------------------------------------------------------------------------------------------
 meta_dt <- read_tsv('~sypark/00_Project/01_thymoma/10_Final_data/02_metadata/Thymoma_summary_191115_1stSheet.txt')
 volc_dt <- read_tsv(paste0("~sypark/00_Project/01_thymoma/10_Final_data/01_expression/",
@@ -59,11 +62,11 @@ with(resmat,{
     substr(x, 1, 1) <- toupper(substr(x, 1, 1))
     x
   }
-  plot(structure(NES,names=pathway),structure(1:length(pathway),names=pathway),
+  plot(-structure(NES,names=pathway),structure(1:length(pathway),names=pathway),
        las=1,yaxt="n",ylab="",type='n',xlab="normalized enrichment score\nGTF2I-mutant ↔ wild-type",
        main="Top enriched gene sets");
-  segments(x0 = NES,y0 = 1:length(pathway),x1 = 0,lty = 1,lwd = 5,col = "grey50",lend=1)
-  points(structure(NES,names=pathway),structure(1:length(pathway),names=pathway),
+  segments(x0 = -NES,y0 = 1:length(pathway),x1 = 0,lty = 1,lwd = 5,col = "grey50",lend=1)
+  points(-structure(NES,names=pathway),structure(1:length(pathway),names=pathway),
          bg=circlize::colorRamp2(c(10:0),RColorBrewer::brewer.pal(11,"Spectral"))(-log10(padj)),
          pch=21,cex=2)
   axis(2,at = 1:length(pathway),labels = pathway %>% tolower %>%
@@ -79,7 +82,7 @@ with(resmat,{
   abline(v=0,lty=2,col="grey")
 })
 text(1.5,20,expression(-log[10]~q))
-par(new=T,fig=c(.94,.96,.7,.85),mar=c(0,0,0,0))
+par(new=T,fig=c(.94,.96,.2,.35),mar=c(0,0,0,0))
 plot(100,xlim=c(0,1),ylim=c(0,20),xaxt='n',bty='n',xlab="",las=2)
 
 

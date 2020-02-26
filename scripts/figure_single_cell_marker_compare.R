@@ -23,11 +23,6 @@ if(F){
   nnw <- wcor2(T0, Tx, score1) %>% apply(2, function(x){names(sort(x,decreasing = T)[1:20])})
 }
 
-
-
-Tp[1:3,1:3]
-T0[1:3,1:3]
-
 Tp = Tx
 for(i in 1:ncol(Tp)){
   Tp[,i] = rowSums(T0[,nn[,i]])
@@ -94,10 +89,12 @@ getmarkers <- function(Tx,Tp,query,backgroud=handgated[1:4],n=50){
   mS=sqrt((Sx^2)*Sp)
   x=Heatmap(Tx[names(sort(mS)[1:n]),unlist(backgroud)],
           cluster_columns = F, cluster_rows = T,
-          clustering_method_rows = "ward.D",clustering_distance_rows = "pearson") + 
+          clustering_method_rows = "ward.D",
+          clustering_distance_rows = "pearson") + 
     Heatmap(Tp[names(sort(mS)[1:n]),unlist(backgroud)],
             cluster_columns = F, cluster_rows = T,
-            clustering_method_rows = "ward.D",clustering_distance_rows = "pearson")
+            clustering_method_rows = "ward.D",
+            clustering_distance_rows = "pearson")
   draw(x)
   sort(mS)[1:n]
 }

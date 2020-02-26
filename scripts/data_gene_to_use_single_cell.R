@@ -75,7 +75,7 @@ gene_table <- gene_table %>% left_join(bm) %>% na.omit() %>%
               mutate(thymoma_cv2 = thymoma_var_tpm/thymoma_mean_tpm^2)) %>%
   na.omit()
 
-pdf("figures/supplimentary.gene.selection.nonstromal.highvarinthymoma.pdf", 13,7)
+pdf("figures/supplimentary.gene.selection.nonstromal.highvarinthymoma2.pdf", 13,7)
 par(mfrow = c(1,2))
 with(gene_table, smoothScatter(stromal_occupacy, log(total_count_in_single_cell), 
                                xlab = "Stromal transcript occupacy", ylab="log(total UMI count)"))
@@ -190,7 +190,7 @@ c("AIRE", "PSMB11", "LY75", "LGALS7", "DMKN", "KRT15", "KRT14", "TBX1",
 gene_table$hgname
 
 if(F){
-  write_rds(gene.use, "data/gene.use.Rds")
+  write_rds(gene.use, "data/gene.use2.Rds")
   rm(mat,a0,a1,afit,df,minMeanForFit,non_stromal_genes,over_fit_line,useForFit,varFitRatio,varorder,vfit,xg, fit, gene_table, over_lower_fit_line,params,g)
   rm(thymoma_tpm,bm)
 }

@@ -21,7 +21,7 @@ dr <- tribble(
   -4,	0.04178269,	0.04958231,	0.05537876,	0.05178279,	0.04391409,	0.03701924,	0.03479819,	0.04333104,	0.03529828
 )
 
-cairo_pdf("~kjyi/Projects/thymus_single_cell/final2/figures/irs4_overexpression.pdf",height = 9/2.54,width=6/2.54,pointsize = 12*0.7)
+cairo_pdf("~kjyi/Projects/thymus_single_cell/final2/figures/irs4_overexpression.pdf",width=1150/2/254,height=1050/254,pointsize = 12*0.7)
 
 par(mfrow=c(2,1),mar=c(3,4,.5,.5))
 
